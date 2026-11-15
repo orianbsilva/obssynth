@@ -2,7 +2,7 @@
 // (app/obssynth4d: params.hpp, driver.hpp, presets.cpp), so a preset sounds here as it sounds in the app.
 //   notes: one note port, CLAP or MIDI; the wheel (CC1), expression (CC11), CC A-D (16-19), bend and pressure as MIDI.
 //   params: the four oscillators' and the global values, 0..1 as the panel's knobs turn (their text in their units),
-//     automatable; PROGRAM (not automatable) loads a factory preset (the 34 of the bank).
+//     automatable; PROGRAM (not automatable) loads a factory preset (the 37 of the bank).
 //   state: JSON: the values, the matrix's routes, the mod envelopes, the tube, the vector path; {"preset": "<name>"}
 //     (and "osc"/"glb" over it) loads a factory preset, for sessions written by hand.
 //   editor: the product's panel (obssynth4d --remote), a program of its own (remote_editor.hpp), on Windows inside
@@ -144,6 +144,7 @@ namespace
         j["product"] = "ObsSynth4D", j["name"] = s.name, j["program"] = program, j["values"] = v, j["routes"] = routes, j["modEnv"] = env;
         j["tube"] = {s.tubeModel, s.tubeChaos};
         j["vector"] = {{"on", s.vecOn}, {"loop", s.vecLoop}, {"path", path}};
+        j["engines"] = kPartCount; // the ENGINE switch's places (an older state had 4: no SUPER)
         return j;
     }
 
@@ -636,9 +637,19 @@ namespace
             if (j.contains("program") && !j.contains("preset"))
                 program = j["program"].get<int>();
             if (j.contains("values"))
+            {
                 for (int i = 0; i < NPARAMS; ++i)
                     if (j["values"].contains(nameOf(i)))
                         st.v[static_cast<size_t>(i)] = j["values"][nameOf(i)].get<float>();
+                // a state from before SUPER: its ENGINE values were places of 4 (STD WT FM GR), now of 5
+                const int had = j.value("engines", 4);
+                if (had != kPartCount)
+                    for (int o = 0; o < 4; ++o)
+                    {
+                        float &e = st.v[static_cast<size_t>(o * OSC_PARAM_COUNT + OSC_PART_TYPE)];
+                        e = std::round(e * static_cast<float>(had - 1)) / static_cast<float>(kPartCount - 1);
+                    }
+            }
             if (j.contains("routes"))
             {
                 st.routes = {};

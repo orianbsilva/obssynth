@@ -25,6 +25,7 @@
 #include "../../vendor/json.hpp"
 #include "controllers.hpp"
 #include "params.hpp"
+#include "parts.hpp"
 #include "presets.hpp"
 #include "sound.hpp"
 #include "synth/core/grain_engine.hpp"
@@ -181,6 +182,8 @@ namespace
                 v.push_back({68 + page, "MORPH", "OSC"});
             else if (part == 3)
                 v.push_back({68 + page, "GRAIN POS", "OSC"});
+            else if (part == 4)
+                v.push_back({68 + page, "DETUNE", "OSC"});
             else if (part == 2)
                 v.push_back({b + 6, "FM INDEX", "OSC"});
             v.push_back({b + 3, "LEVEL", "MIX"});
@@ -269,7 +272,7 @@ namespace
     // ── the panel ────────────────────────────────────────────────────────────────────────────────────
     constexpr float W = 1600, H = 900;
     constexpr float HOST_CROP = 242; // in a host, MAIN: the PLAY column (and the name above it) left out (MOD MATRIX keeps its ROUTE)
-    const char *kPart[] = {"STD", "WT", "FM", "GR"};
+    const char *kPart[] = {"STD", "WT", "FM", "GR", "SUPER"}; // the ENGINE switch's places (parts.hpp)
     const char *kAlgo[] = {"2OP", "2OP+FB", "4OP SER", "4OP PAR", "4OP MIX"};
 
     // where a control's value lives (normalized 0..1)
@@ -433,6 +436,13 @@ namespace
     std::string pct(float v) { return fmt("%.0f%%", static_cast<double>(v) * 100); }
     std::string two(float v) { return fmt("%.2f", static_cast<double>(v)); }
     std::string semis(float v) { return std::fabs(v) < 0.5f ? std::string("0") : fmt("%+.0f", static_cast<double>(v)); }
+    // SUPER's shape from the wave knob: SAW, SQR, TRI or SIN (PULSE plays as SQR, NOISE as SAW: super_engine.hpp)
+    int superShape(int wave) { return wave == 0 ? 3 : wave == 2 || wave == 4 ? 1 : wave == 3 ? 2 : 0; }
+    std::string superWave(float v)
+    {
+        static const char *n[] = {"SAW", "SQR", "TRI", "SIN"};
+        return n[superShape(static_cast<int>(std::lround(v)))];
+    }
     std::string panName(float v) { return std::fabs(v) < 0.01f ? std::string("C") : fmt(v < 0 ? "L%.0f" : "R%.0f", std::fabs(static_cast<double>(v)) * 100); }
 
     // ── the CC overlay: a control's names, and what a name moves ─────────────────────────────────────
@@ -707,7 +717,7 @@ namespace
         {
             const float x = 256 + static_cast<float>(o) * 335, y = 72;
             const int part = partOf(s, o);
-            sw(x + 16, y + 52, 44, osc(o, OSC_PART_TYPE), "ENGINE", {"STD", "WT", "FM", "GR"});
+            sw(x + 16, y + 52, 44, osc(o, OSC_PART_TYPE), "ENGINE", {"STD", "WT", "FM", "GR", "SUP"});
             if (part == 0)
             {
                 knob(x + 72, y + 150, 24, osc(o, OSC_WAVE), "WAVE", nullptr);
@@ -748,6 +758,16 @@ namespace
                 };
                 hot(x + 18, y + 84, 14, 18, [step] { step(-1); });
                 hot(x + 34, y + 84, 14, 18, [step] { step(1); });
+            }
+            else if (part == 4)
+            {
+                // SUPER: seven voices of the wave; DETUNE and SIDE on the granular knobs (the same matrix destination)
+                knob(x + 50, y + 210, 21, osc(o, OSC_WT_MORPH), "DETUNE", pct);
+                knob(x + 116, y + 212, 13, osc(o, OSC_GR_SPRAY), "SIDE", pct);
+                knob(x + 162, y + 212, 13, osc(o, OSC_WAVE), "WAVE", superWave);
+                knob(x + 208, y + 212, 13, osc(o, OSC_TUNE), "TUNE", semis);
+                knob(x + 254, y + 212, 13, osc(o, OSC_LEVEL), "LVL", pct);
+                knob(x + 298, y + 212, 13, osc(o, OSC_PAN), "PAN", panName);
             }
             else
             {
@@ -830,7 +850,7 @@ namespace
         State s;
         s.page = key.empty() ? 0 : key[0] - '0';
         for (int o = 0; o < 4 && o + 1 < static_cast<int>(key.size()); ++o)
-            s.osc[o][OSC_PART_TYPE] = static_cast<float>(key[static_cast<size_t>(o + 1)] - '0') / 3.0f;
+            s.osc[o][OSC_PART_TYPE] = static_cast<float>(key[static_cast<size_t>(o + 1)] - '0') / static_cast<float>(kPartCount - 1);
         s.selRoute = -1;
         if (s.page == 1 && key.size() > 5 && key[5] == 'r')
             s.routes[0] = {0, 0, 0.5f, true}, s.selRoute = 0;
@@ -1068,6 +1088,50 @@ namespace
                 m.live += sound.source(rt.src) * a;
             }
         return m;
+    }
+
+    // SUPER's display: the seven voices of its shape, the centre over the six spread by DETUNE (as the matrix has it
+    // now), dimmer as SIDE lowers them; the count and the shape's name, DETUNE and SIDE
+    void superView(Canvas &cv, float dx, float dy, float dw, float dh, const float *o, const Mod &m)
+    {
+        const panelkit::Theme &t = cv.theme;
+        const int shape = superShape(static_cast<int>(std::lround(toValue(OSC_RANGES[OSC_WAVE], o[OSC_WAVE]))));
+        const float det = o[OSC_WT_MORPH], live = m.routes > 0 ? std::clamp(det + m.live, 0.0f, 1.0f) : det;
+        const float side = o[OSC_GR_SPRAY];
+        static const char *names[] = {"7 SAWS", "7 SQUARES", "7 TRIANGLES", "7 SINES"};
+        cv.say(names[shape], dx + 8, dy + 14, 9, t.accent, 0.7f, false, true, 2, Left);
+        cv.say("DET " + fmt("%.0f%%", static_cast<double>(live) * 100) + "  SIDE " + fmt("%.0f%%", static_cast<double>(side) * 100),
+            dx + dw - 8, dy + 14, 8, t.accent, 0.8f, false, true, 0.5f, Right, false);
+        auto wave = [shape](float ph, float pw)
+        {
+            ph -= std::floor(ph);
+            switch (shape)
+            {
+            case 1: return ph < pw ? 1.0f : -1.0f;
+            case 2: return ph < 0.5f ? 4 * ph - 1 : 3 - 4 * ph;
+            case 3: return std::sin(ph * 2 * static_cast<float>(M_PI));
+            default: return 2 * ph - 1;
+            }
+        };
+        static const float off[6] = {-1.0f, -0.57f, -0.18f, 0.18f, 0.56f, 0.98f};
+        const float x0 = dx + 10, w = dw - 20, mid = dy + dh * 0.6f, amp = (dh - 40) * 0.5f, cycles = 2.5f;
+        for (int k = -1; k < 6; ++k)
+        {
+            const bool centre = k < 0;
+            // each side a little faster or slower (the spread drawn larger than it sounds, to be seen) and its own start
+            const float ratio = centre ? 1.0f : 1.0f + off[k] * live * 0.18f, start = centre ? 0.0f : 0.13f * static_cast<float>(k + 1);
+            const float pw = centre ? 0.5f : 0.5f + off[k] * live * 0.3f;
+            std::vector<SDL_FPoint> pts;
+            for (int i = 0; i <= 160; ++i)
+            {
+                const float u = static_cast<float>(i) / 160;
+                pts.push_back({x0 + u * w, mid - amp * wave(start + u * cycles * ratio, pw)});
+            }
+            if (centre)
+                cv.lines(pts, t.accent, 0.5f + 0.5f * (1 - 0.4f * side), 2.0f);
+            else
+                cv.lines(pts, t.trace, 0.12f + 0.5f * side, 1.0f);
+        }
     }
 
     // the destination a main-page control sets, or -1
@@ -1546,10 +1610,10 @@ namespace
                 s.glb[p] = toNorm(GLB_RANGES[p], GLB_RANGES[p].def);
             // a voice to start with: OSC 1 a saw, OSC 2 the morph table, OSC 3 FM and OSC 4 silent
             s.osc[0][OSC_LEVEL] = 0.8f;
-            s.osc[1][OSC_PART_TYPE] = 0.5f;
+            s.osc[1][OSC_PART_TYPE] = toNorm(OSC_RANGES[OSC_PART_TYPE], 1); // WT
             s.osc[1][OSC_LEVEL] = 0.7f;
             s.osc[1][OSC_WT_MORPH] = 0.38f;
-            s.osc[2][OSC_PART_TYPE] = 1.0f;
+            s.osc[2][OSC_PART_TYPE] = toNorm(OSC_RANGES[OSC_PART_TYPE], 2); // FM
             s.osc[2][OSC_LEVEL] = 0.0f;
             s.osc[2][OSC_FM_ALGORITHM] = 1.0f;
             s.osc[3][OSC_LEVEL] = 0.0f;
@@ -1820,6 +1884,8 @@ namespace
                             cv.rect(std::round(lx) - 1, dy + 22, 3, 6, t.traceHi);
                         }
                     }
+                    else if (part == 4)
+                        superView(cv, x + 14, y + 80, 297, 96, s.osc[o], modOf(s, sound, 68 + o));
                     else
                     {
                         const int ai = static_cast<int>(std::lround(toValue(OSC_RANGES[OSC_FM_ALGORITHM], s.osc[o][OSC_FM_ALGORITHM])));
@@ -2269,7 +2335,7 @@ namespace
                 for (int o = 0; o < 4; ++o)
                 {
                     const int part = partOf(s, o);
-                    const Mod m = part == 1 || part == 3 ? modOf(s, sound_, 68 + o) : Mod{};
+                    const Mod m = part == 1 || part >= 3 ? modOf(s, sound_, 68 + o) : Mod{};
                     halos.push_back(m.routes > 0 ? std::round(m.live * 400.0f) : -1e9f);
                     const size_t k = halos.size() - 1;
                     if (k >= drawnHalos_.size() || drawnHalos_[k] != halos[k])

@@ -105,7 +105,7 @@ namespace obs
         {0, 1, 0.5f, false, 0},       // fx p3
         {0, 1, 0.8f, false, 0},       // level
         {-1, 1, 0, false, 0},         // pan
-        {0, 3, 0, false, 4},          // part: std wt fm gr
+        {0, 4, 0, false, 5},          // part: std wt fm gr super (parts.hpp)
         {0, 1, 0, false, 0},          // wt morph
         {0, 4, 1, false, 5},          // fm algorithm
         {0.1f, 16, 1, true, 0},       // fm mod ratio

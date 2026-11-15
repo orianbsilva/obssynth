@@ -3,8 +3,8 @@
 Três instrumentos em **C++17** sobre o mesmo motor de síntese em tempo real (osciladores, filtros, envelopes,
 mod matrix, efeitos, saída com decimador e limitador):
 
-- **ObsSynth4D**: sintetizador de 4 osciladores (STD, wavetable, FM, granular) com síntese vetorial, mod matrix
-  e 34 presets de fábrica.
+- **ObsSynth4D**: sintetizador de 4 osciladores (STD, wavetable, FM, granular, SUPER) com síntese vetorial, mod matrix
+  e 37 presets de fábrica.
 - **ObsDrums**: drum machine de 16 pads: 12 instrumentos e 4 pads livres. Cada pad tem os motores CIRCUIT
   (modelos analógicos), FM, VA, SAMPLE e GRAIN.
 - **ObsSynthCT1** (*Cross Table One*): 5 operadores, cada um STD (forma clássica) ou WT (um banco de wavetable e

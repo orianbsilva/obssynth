@@ -3,6 +3,7 @@
 // ranges, params.hpp) becomes the engine's calls. One place for the app (sound.cpp, on its audio thread) and the CLAP
 // plugin (ObsSynth4D.clap, on the host's): whoever owns the engine calls it there, nobody else touches the engine.
 #include "params.hpp"
+#include "parts.hpp"
 #include "../../products/obs_synth/obs_synth_4d.hpp"
 
 #include <array>
@@ -45,14 +46,14 @@ namespace obs
             case OSC_AMP_REL: s.setOscAmpRelease(o, v); break;
             case OSC_LEVEL: s.setOscLevel(o, v); break;
             case OSC_PAN: s.setOscPan(o, (v + 1.0f) * 0.5f); break;
-            case OSC_PART_TYPE: s.setOscPartType(o, static_cast<PartType>(static_cast<int>(v + 0.5f))); break;
-            case OSC_WT_MORPH: // a wavetable's position, and a granular oscillator's
+            case OSC_PART_TYPE: s.setOscPartType(o, partTypeAt(v)); break;
+            case OSC_WT_MORPH: // a wavetable's position, and a granular oscillator's (SUPER: its DETUNE)
                 s.setOscWtMorphPos(o, v * (tables[oi] > 1 ? static_cast<float>(tables[oi] - 1) : 1.0f));
                 s.setOscGrain(o, 0, v);
                 break;
             case OSC_GR_SIZE: s.setOscGrain(o, 1, v); break;
             case OSC_GR_DENSITY: s.setOscGrain(o, 2, v); break;
-            case OSC_GR_SPRAY: s.setOscGrain(o, 3, v); break;
+            case OSC_GR_SPRAY: s.setOscGrain(o, 3, v); break; // (SUPER: its SIDE)
             case OSC_FM_ALGORITHM: s.setOscFMAlgorithm(o, static_cast<FMAlgorithm>(static_cast<int>(v + 0.5f))); break;
             case OSC_FM_MOD_RATIO: s.setOscFMModulatorRatio(o, v); break;
             case OSC_FM_MOD_INDEX: s.setOscFMModulationIndex(o, v); break;

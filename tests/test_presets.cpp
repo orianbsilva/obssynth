@@ -570,3 +570,39 @@ TEST_CASE("Profile: lite (6 voices, modulation and filters every 32 samples, 1x,
         CHECK(jumps[1] <= jumps[0] * 1.25 + 1e-3); // no clicks of its own: the steps of the modulation glide
     }
 }
+
+// ── SUPER in ObsSynth4D: the ENGINE switch's fifth place, a preset with it, DETUNE through the matrix ─────────────
+#include "../src/app/obssynth4d/parts.hpp"
+
+TEST_CASE("SUPER: the ENGINE switch's places map to the engines and back")
+{
+    CHECK(obs::partTypeAt(4.0f) == PartType::SUPER);
+    CHECK(obs::partTypeAt(3.0f) == PartType::GRANULAR);
+    for (int i = 0; i < obs::kPartCount; ++i)
+        CHECK(obs::placeOf(obs::kPartTypes[i]) == doctest::Approx(static_cast<float>(i)));
+    CHECK(obs::placeOf(PartType::SAMPLE) == doctest::Approx(0.0f)); // ObsSynth One's: STD here
+}
+
+TEST_CASE("SUPER: an oscillator on it sounds, and the seven at full SIDE about as loud as the centre alone")
+{
+    auto take = [](float side)
+    {
+        Preset4D p = quiet();
+        p.levels[0] = 0.8f;
+        p.waves[0] = WaveType::SAW;
+        p.partTypes[0] = PartType::SUPER;
+        p.cutoffs[0] = 20000.0f;
+        p.grain[0].position = 0.5f; // DETUNE
+        p.grain[0].spray = side;    // SIDE
+        ObsSynth4D s(static_cast<float>(kRate));
+        s.applyPreset(p);
+        s.noteOn(48, 0.8f);
+        Take t;
+        render(s, 0.5, t);
+        CHECK(t.bad == 0);
+        return t.db();
+    };
+    const double one = take(0.0f), seven = take(1.0f);
+    CHECK(one > -30.0);
+    CHECK(std::fabs(seven - one) < 3.0);
+}

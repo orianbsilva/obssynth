@@ -1624,10 +1624,123 @@ namespace synth
         {{0.6f, 0.12f, 28.0f, 0.2f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}}, // grains: position, size s, per second, spray
     };
 
+    // ─── SUPER: seven voices of one wave around the centre (the FM-1's engine). DETUNE on the grains' position,
+    // SIDE on their spray (the same knobs, the same matrix destination)
+
+    // ─── Super Chords ─ seven saws on OSC 1, a sub octave saw on OSC 2: wide chords, the mod wheel spreads them
+    static constexpr Preset4D PRESET_SUPER_CHORDS = {
+        "Super Chords",
+        {WaveType::SAW, WaveType::SAW, WaveType::SINE, WaveType::SINE},
+        {0.75f, 0.3f, 0.0f, 0.0f}, // levels
+        {0.5f, 0.5f, 0.5f, 0.5f}, // pans
+        {5200.0f, 1400.0f, 20000.0f, 20000.0f}, // cutoffs
+        {0.15f, 0.1f, 0.0f, 0.0f}, // reso
+        {0.2f, 0.1f, 0.0f, 0.0f}, // fenv
+        {0.0f, -12.0f, 0.0f, 0.0f}, // tune
+        {0.02f, 0.02f, 0.01f, 0.01f}, // ampA
+        {0.6f, 0.6f, 0.2f, 0.2f}, // ampD
+        {0.85f, 0.8f, 0.7f, 0.7f}, // ampS
+        {0.45f, 0.4f, 0.3f, 0.3f}, // ampR
+        {0.01f, 0.01f, 0.01f, 0.01f}, // fltA
+        {0.5f, 0.5f, 0.2f, 0.2f}, // fltD
+        {0.6f, 0.6f, 0.5f, 0.5f}, // fltS
+        {0.5f, 0.5f, 0.3f, 0.3f}, // fltR
+        {{0.2f, LFOWaveType::SINE}, {0.8f, LFOWaveType::TRIANGLE}, {0.3f, LFOWaveType::SINE}, {5.0f, LFOWaveType::SINE}},
+        {{0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}}, // mod envs A D S R
+        {0.375f, 0.5f, 0.3f, 0.22f, 0.45f, true}, // delay
+        {TubeModel::FLAT, 1.0f, 0.0f, 0.0f, 0.0f}, // tube
+        {
+            {ObsSynthSrc::MOD_WHEEL, ObsSynthDst::OSC1_WT_MORPH, 0.4f},
+            {ObsSynthSrc::LFO1, ObsSynthDst::OSC1_WT_MORPH, 0.06f},
+            {ObsSynthSrc::VELOCITY, ObsSynthDst::OSC1_CUTOFF, 0.25f},
+        },
+        3, // numRoutes
+        16000.0f, 0.0f, // master filter
+        {1.2f, 0.92f, 0.0f}, // tube reverb: off
+        {PartType::SUPER, PartType::STANDARD_OSC, PartType::STANDARD_OSC, PartType::STANDARD_OSC},
+        {0.0f, 0.0f, 0.0f, 0.0f}, // wavetable positions (tables)
+        {{FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}},
+        {}, // vector: off
+        {{0.42f, 0.08f, 25.0f, 0.7f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}}, // SUPER: detune, -, -, side
+    };
+
+    // ─── Super Squares ─ seven squares, their widths spread by DETUNE: a hollow, chorused lead with glide-free bite
+    static constexpr Preset4D PRESET_SUPER_SQUARES = {
+        "Super Squares",
+        {WaveType::SQUARE, WaveType::SINE, WaveType::SINE, WaveType::SINE},
+        {0.8f, 0.0f, 0.0f, 0.0f}, // levels
+        {0.5f, 0.5f, 0.5f, 0.5f}, // pans
+        {2600.0f, 20000.0f, 20000.0f, 20000.0f}, // cutoffs
+        {0.3f, 0.0f, 0.0f, 0.0f}, // reso
+        {0.45f, 0.0f, 0.0f, 0.0f}, // fenv
+        {0.0f, 0.0f, 0.0f, 0.0f}, // tune
+        {0.005f, 0.01f, 0.01f, 0.01f}, // ampA
+        {0.4f, 0.2f, 0.2f, 0.2f}, // ampD
+        {0.75f, 0.7f, 0.7f, 0.7f}, // ampS
+        {0.25f, 0.3f, 0.3f, 0.3f}, // ampR
+        {0.005f, 0.01f, 0.01f, 0.01f}, // fltA
+        {0.35f, 0.2f, 0.2f, 0.2f}, // fltD
+        {0.35f, 0.5f, 0.5f, 0.5f}, // fltS
+        {0.3f, 0.3f, 0.3f, 0.3f}, // fltR
+        {{5.5f, LFOWaveType::SINE}, {0.8f, LFOWaveType::TRIANGLE}, {0.3f, LFOWaveType::SINE}, {5.0f, LFOWaveType::SINE}},
+        {{0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}}, // mod envs A D S R
+        {0.3f, 0.45f, 0.25f, 0.18f, 0.5f, true}, // delay
+        {TubeModel::FLAT, 1.4f, 0.2f, 0.0f, 0.3f}, // tube
+        {
+            {ObsSynthSrc::MOD_WHEEL, ObsSynthDst::OSC1_PITCH, 0.03f},
+            {ObsSynthSrc::VELOCITY, ObsSynthDst::OSC1_CUTOFF, 0.3f},
+        },
+        2, // numRoutes
+        14000.0f, 0.0f, // master filter
+        {1.2f, 0.92f, 0.0f}, // tube reverb: off
+        {PartType::SUPER, PartType::STANDARD_OSC, PartType::STANDARD_OSC, PartType::STANDARD_OSC},
+        {0.0f, 0.0f, 0.0f, 0.0f}, // wavetable positions (tables)
+        {{FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}},
+        {}, // vector: off
+        {{0.35f, 0.08f, 25.0f, 0.6f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}}, // SUPER: detune, -, -, side
+    };
+
+    // ─── Super Glass ─ seven triangles on two oscillators an octave apart, folded as DETUNE rises; an LFO breathes it
+    static constexpr Preset4D PRESET_SUPER_GLASS = {
+        "Super Glass",
+        {WaveType::TRIANGLE, WaveType::TRIANGLE, WaveType::SINE, WaveType::SINE},
+        {0.6f, 0.4f, 0.0f, 0.0f}, // levels
+        {0.35f, 0.65f, 0.5f, 0.5f}, // pans
+        {9000.0f, 7000.0f, 20000.0f, 20000.0f}, // cutoffs
+        {0.0f, 0.0f, 0.0f, 0.0f}, // reso
+        {0.0f, 0.0f, 0.0f, 0.0f}, // fenv
+        {0.0f, 12.0f, 0.0f, 0.0f}, // tune
+        {0.6f, 0.9f, 0.01f, 0.01f}, // ampA
+        {1.0f, 1.0f, 0.2f, 0.2f}, // ampD
+        {0.9f, 0.85f, 0.7f, 0.7f}, // ampS
+        {1.8f, 2.0f, 0.3f, 0.3f}, // ampR
+        {0.5f, 0.5f, 0.01f, 0.01f}, // fltA
+        {1.0f, 1.0f, 0.2f, 0.2f}, // fltD
+        {0.6f, 0.6f, 0.5f, 0.5f}, // fltS
+        {1.0f, 1.0f, 0.3f, 0.3f}, // fltR
+        {{0.12f, LFOWaveType::TRIANGLE}, {0.07f, LFOWaveType::SINE}, {0.3f, LFOWaveType::SINE}, {5.0f, LFOWaveType::SINE}},
+        {{0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}, {0.01f, 0.3f, 0.0f, 0.5f}}, // mod envs A D S R
+        {0.5f, 0.75f, 0.45f, 0.3f, 0.6f, true}, // delay
+        {TubeModel::FLAT, 1.0f, 0.0f, 0.0f, 0.0f}, // tube
+        {
+            {ObsSynthSrc::LFO1, ObsSynthDst::OSC1_WT_MORPH, 0.25f},
+            {ObsSynthSrc::LFO2, ObsSynthDst::OSC2_WT_MORPH, 0.2f},
+            {ObsSynthSrc::MOD_WHEEL, ObsSynthDst::OSC1_WT_MORPH, 0.4f},
+        },
+        3, // numRoutes
+        15000.0f, 0.0f, // master filter
+        {1.2f, 0.92f, 0.0f}, // tube reverb: off
+        {PartType::SUPER, PartType::SUPER, PartType::STANDARD_OSC, PartType::STANDARD_OSC},
+        {0.0f, 0.0f, 0.0f, 0.0f}, // wavetable positions (tables)
+        {{FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}, {FMAlgorithm::TWO_OP_FEEDBACK, 1.0f, 1.0f, 0.0f, 2.0f, 0.5f}},
+        {}, // vector: off
+        {{0.3f, 0.08f, 25.0f, 0.65f}, {0.25f, 0.08f, 25.0f, 0.55f}, {0.3f, 0.08f, 25.0f, 0.1f}, {0.3f, 0.08f, 25.0f, 0.1f}}, // SUPER: detune, -, -, side
+    };
+
 
     // ============ Preset Bank ============
 
-    static constexpr int PRESET_BANK_SIZE = 34;
+    static constexpr int PRESET_BANK_SIZE = 37;
     static constexpr const Preset4D *PRESET_BANK[PRESET_BANK_SIZE] = {
         &PRESET_INIT,
         &PRESET_LUSH_PAD,
@@ -1663,6 +1776,9 @@ namespace synth
         &PRESET_GRANULAR_VOICE_CLOUD,
         &PRESET_GRANULAR_GLITCH,
         &PRESET_VECTOR_GRAINS,
+        &PRESET_SUPER_CHORDS,
+        &PRESET_SUPER_SQUARES,
+        &PRESET_SUPER_GLASS,
     };
 
 } // namespace synth

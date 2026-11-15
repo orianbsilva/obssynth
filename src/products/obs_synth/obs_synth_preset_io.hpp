@@ -644,7 +644,7 @@ namespace synth
             }
             if (j.contains("partTypes"))
                 for (int i = 0; i < PRESET_NUM_OSCS && i < (int)j["partTypes"].size(); ++i)
-                    p.partTypes[i] = static_cast<PartType>(std::clamp(j["partTypes"][i].get<int>(), 0, 3));
+                    p.partTypes[i] = static_cast<PartType>(std::clamp(j["partTypes"][i].get<int>(), 0, 5));
             if (j.contains("wtMorphPos"))
                 for (int i = 0; i < PRESET_NUM_OSCS && i < (int)j["wtMorphPos"].size(); ++i)
                     p.wtMorphPos[i] = j["wtMorphPos"][i].get<float>();

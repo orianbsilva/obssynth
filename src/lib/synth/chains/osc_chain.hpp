@@ -17,6 +17,7 @@
 #include "../core/svf_filter.hpp"
 #include "../core/grain_engine.hpp"
 #include "../core/sampler.hpp"
+#include "../core/super_engine.hpp"
 #include "../core/effect_slot.hpp"
 #include "../../oscillators/oscillator.hpp"
 #include "../../oscillators/adsr_envelope.hpp"
@@ -31,6 +32,7 @@ namespace synth
      * STANDARD_OSC - existing oscillator (Sine/Saw/PCM/…)
      * WAVETABLE    - WaveTableOsc with morph position
      * FM_ENGINE    - existing Oscillator with WaveType::FM_SYNTHESIS
+     * SUPER        - seven voices of the oscillator's wave, detuned around the centre (SuperEngine)
      */
     enum class PartType : uint8_t
     {
@@ -38,7 +40,8 @@ namespace synth
         WAVETABLE = 1,
         FM_ENGINE = 2,
         GRANULAR = 3, // grains of a recording (GrainEngine)
-        SAMPLE = 4    // a recording played at the note's pitch (SamplePlayer)
+        SAMPLE = 4,   // a recording played at the note's pitch (SamplePlayer)
+        SUPER = 5     // seven detuned voices of the wave (SuperEngine): DETUNE on the position, SIDE on the spray
     };
 
     /**
@@ -105,6 +108,7 @@ namespace synth
         float vector_gain_ = 1.0f; // this oscillator's share of the vector mix (1: vector off)
         GrainEngine grain_;        // the granular engine (PartType::GRANULAR)
         SamplePlayer sampler_;     // the sample player (PartType::SAMPLE)
+        SuperEngine super_;        // the seven voices (PartType::SUPER)
         float current_freq_ = 440.0f;
 
         // State
@@ -178,6 +182,7 @@ namespace synth
             amp_env_.setSampleRate(sample_rate);
             grain_.setSampleRate(sample_rate);
             sampler_.setSampleRate(sample_rate);
+            super_.setSampleRate(sample_rate);
         }
 
         /**
@@ -189,6 +194,7 @@ namespace synth
             // the plain oscillator's wave: kept, and played only while the part is that oscillator (it replaced the
             // FM generator under an FM part: a preset loaded over FM played a plain wave)
             prev_wave_type_ = wave_type;
+            super_.setWave(wave_type); // SUPER's shape
             if (part_type_ == PartType::STANDARD_OSC)
                 oscillator_.setWaveType(wave_type);
         }
@@ -361,11 +367,21 @@ namespace synth
         void setDrift(float semitones) { drift_ = semitones; }
 
         // ============ Granular ============
+        // (the position and the spray are also SUPER's DETUNE and SIDE: the same knobs, the same matrix destination)
         void setGrainSource(std::shared_ptr<const GrainSource> s) { grain_.setSource(std::move(s)); }
-        void setGrainPosition(float p) { grain_.setPosition(p); }
+        void setGrainPosition(float p)
+        {
+            grain_.setPosition(p);
+            super_.setDetune(p);
+        }
         void setGrainSize(float seconds) { grain_.setSize(seconds); }
         void setGrainDensity(float perSecond) { grain_.setDensity(perSecond); }
-        void setGrainSpray(float s) { grain_.setSpray(s); }
+        void setGrainSpray(float s)
+        {
+            grain_.setSpray(s);
+            super_.setSide(s);
+        }
+        bool isSuper() const { return part_type_ == PartType::SUPER; }
         bool isGranular() const { return part_type_ == PartType::GRANULAR; }
         void setSampleSource(std::shared_ptr<const GrainSource> s) { sampler_.setSource(std::move(s)); }
         void setSampleStart(float p) { sampler_.setStart(p); }
@@ -381,6 +397,7 @@ namespace synth
         void setWtMorphMod(float mod)
         {
             grain_.setPositionMod(mod); // a granular oscillator's position takes the same destination
+            super_.setDetuneMod(mod);   // and SUPER's DETUNE
             if (!wt_)
                 return;
             const int tc = wt_->tableCount();
@@ -422,6 +439,13 @@ namespace synth
 
             if (part_type_ == PartType::SAMPLE)
                 sampler_.noteOn();
+
+            if (part_type_ == PartType::SUPER && amp_env_.getCurrentAmplitude() < 1e-3f)
+            {
+                uint32_t seed; // from silence: the sides from phases of this note's own (a retrigger keeps them)
+                std::memcpy(&seed, &drift_, sizeof seed);
+                super_.noteOn(seed ^ static_cast<uint32_t>(note) * 2654435761u);
+            }
 
             // Trigger envelopes
             // the phases start over from silence only: a retrigger at its level would click (looked at before the
@@ -519,6 +543,8 @@ namespace synth
                 sample = grain_.process(current_freq_);
             else if (part_type_ == PartType::SAMPLE)
                 sample = sampler_.process(current_freq_);
+            else if (part_type_ == PartType::SUPER)
+                sample = super_.process(current_freq_);
             else
             {
                 sample = oscillator_.getSample();
@@ -677,6 +703,7 @@ namespace synth
                 break;
             case PartType::GRANULAR: // the grains read the source; the oscillator only keeps the pitch
             case PartType::SAMPLE:   // the player reads its source likewise
+            case PartType::SUPER:    // the seven voices keep their own phases
                 break;
             }
         }

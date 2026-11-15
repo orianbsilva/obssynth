@@ -19,6 +19,7 @@
 
 #include <doctest/doctest.h>
 #include <cmath>
+#include <algorithm>
 #include <vector>
 
 #include "../src/lib/math/synt_math.hpp"
@@ -307,4 +308,96 @@ TEST_CASE("Sine table: within 2e-6 of sin on the table's own phase; 4e-6 over ma
     // just below a whole turn (t - floor(t) rounds to 1): no read past the table
     CHECK(std::fabs(synth::math::sinTurns(-1e-9f)) < 1e-5f);
     CHECK(std::fabs(synth::math::sinTurns(std::nextafter(3.0f, 0.0f))) < 1e-5f);
+}
+
+// ── SUPER (super_engine.hpp): seven voices of one wave around the centre ────────────────────────────────────────
+#include "../src/lib/synth/core/super_engine.hpp"
+
+namespace
+{
+    struct SuperTake
+    {
+        double rms = 0, dc = 0, peak = 0;
+        int bad = 0;
+    };
+
+    SuperTake superTake(synth::WaveType w, float detune, float side, float freq = 220.0f)
+    {
+        synth::SuperEngine e;
+        e.setSampleRate(48000.0f);
+        e.setWave(w);
+        e.setDetune(detune);
+        e.setSide(side);
+        e.noteOn(12345u);
+        SuperTake t;
+        const int n = 48000;
+        for (int i = 0; i < n; ++i)
+        {
+            const float x = e.process(freq);
+            if (!std::isfinite(x))
+                ++t.bad;
+            t.rms += static_cast<double>(x) * static_cast<double>(x);
+            t.dc += static_cast<double>(x);
+            t.peak = std::max(t.peak, static_cast<double>(std::fabs(x)));
+        }
+        t.rms = std::sqrt(t.rms / n);
+        t.dc /= n;
+        return t;
+    }
+} // namespace
+
+TEST_CASE("SUPER: every shape is finite, bounded and without DC, at any detune and side")
+{
+    for (synth::WaveType w : {synth::WaveType::SAW, synth::WaveType::SQUARE, synth::WaveType::TRIANGLE, synth::WaveType::SINE})
+        for (float det : {0.0f, 0.5f, 1.0f})
+            for (float side : {0.0f, 0.63f, 1.0f})
+            {
+                CAPTURE(static_cast<int>(w));
+                CAPTURE(det);
+                CAPTURE(side);
+                const SuperTake t = superTake(w, det, side);
+                CHECK(t.bad == 0);
+                CHECK(t.peak < 3.0);
+                CHECK(std::fabs(t.dc) < 0.02);
+                CHECK(t.rms > 0.2);
+            }
+}
+
+TEST_CASE("SUPER: the seven voices at full SIDE are about as loud as the centre alone (equal power)")
+{
+    for (synth::WaveType w : {synth::WaveType::SAW, synth::WaveType::SQUARE, synth::WaveType::SINE})
+    {
+        CAPTURE(static_cast<int>(w));
+        const double one = superTake(w, 0.5f, 0.0f).rms, seven = superTake(w, 0.5f, 1.0f).rms;
+        CHECK(seven > one * 0.6);
+        CHECK(seven < one * 1.4);
+    }
+}
+
+TEST_CASE("SUPER: DETUNE spreads the voices (a detuned sum beats; at 0 the sides sit on the centre's pitch)")
+{
+    // over one second, the envelope of a detuned sum moves; the undetuned one stays put
+    auto spread = [](float det)
+    {
+        synth::SuperEngine e;
+        e.setSampleRate(48000.0f);
+        e.setWave(synth::WaveType::SINE);
+        e.setDetune(det);
+        e.setSide(1.0f);
+        e.noteOn(7u);
+        double lo = 1e9, hi = 0;
+        for (int b = 0; b < 40; ++b)
+        {
+            double s = 0;
+            for (int i = 0; i < 1200; ++i)
+            {
+                const float x = e.process(440.0f);
+                s += static_cast<double>(x) * static_cast<double>(x);
+            }
+            lo = std::min(lo, s), hi = std::max(hi, s);
+        }
+        return hi / std::max(lo, 1e-9);
+    };
+    CHECK(spread(0.0f) < 1.1);
+    CHECK(spread(1.0f) > 1.5);
 }

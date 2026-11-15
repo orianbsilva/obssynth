@@ -1,4 +1,5 @@
 #include "presets.hpp"
+#include "parts.hpp"
 #include "../common/data_home.hpp"
 #include "../common/sample_find.hpp"
 
@@ -93,8 +94,8 @@ namespace obs
             v[OSC_AMP_REL] = p.ampR[o];
             v[OSC_LEVEL] = p.levels[o];
             v[OSC_PAN] = p.pans[o] * 2 - 1; // the engine's 0..1, the panel's -1..1
-            v[OSC_PART_TYPE] = static_cast<float>(p.partTypes[o]);
-            v[OSC_WT_MORPH] = p.partTypes[o] == synth::PartType::GRANULAR ? p.grain[o].position
+            v[OSC_PART_TYPE] = placeOf(p.partTypes[o]);
+            v[OSC_WT_MORPH] = p.partTypes[o] == synth::PartType::GRANULAR || p.partTypes[o] == synth::PartType::SUPER ? p.grain[o].position
                               : tables[o] > 1                         ? p.wtMorphPos[o] / static_cast<float>(tables[o] - 1)
                                                                       : 0;
             v[OSC_GR_SIZE] = p.grain[o].size;
@@ -183,7 +184,7 @@ namespace obs
             p.ampR[o] = v[OSC_AMP_REL];
             p.levels[o] = v[OSC_LEVEL];
             p.pans[o] = (v[OSC_PAN] + 1) / 2;
-            p.partTypes[o] = static_cast<synth::PartType>(static_cast<int>(std::lround(v[OSC_PART_TYPE])));
+            p.partTypes[o] = partTypeAt(v[OSC_PART_TYPE]);
             p.wtMorphPos[o] = v[OSC_WT_MORPH] * static_cast<float>(tables[o] > 1 ? tables[o] - 1 : 0);
             p.grain[o] = {v[OSC_WT_MORPH], v[OSC_GR_SIZE], v[OSC_GR_DENSITY], v[OSC_GR_SPRAY]};
             p.fmParams[o].algorithm = static_cast<synth::FMAlgorithm>(static_cast<int>(std::lround(v[OSC_FM_ALGORITHM])));
