@@ -45,6 +45,8 @@ namespace onep
             {"FM Bell", {{"OSC_PART_TYPE", 2}, {"OSC_FM_MOD_RATIO", 3.5f}, {"OSC_FM_MOD_INDEX", 6}, {"OSC_AMP_DEC", 1.4f}, {"OSC_AMP_SUS", 0}, {"OSC_AMP_REL", 1.0f}}},
             {"Sample Organ", {{"OSC_PART_TYPE", 4}, {"OSC_SMP_LOOP", 1}, {"OSC_AMP_ATK", 0.05f}, {"OSC_AMP_REL", 0.6f}}, "vcsl-pipe-organ-quiet-C4.wav"},
             {"Grain Cloud", {{"OSC_PART_TYPE", 3}, {"OSC_GR_SIZE", 0.12f}, {"OSC_GR_DENSITY", 40}, {"OSC_GR_SPRAY", 0.3f}, {"OSC_AMP_ATK", 0.5f}, {"OSC_AMP_REL", 1.5f}}},
+            {"Super Saw", {{"OSC_PART_TYPE", 5}, {"OSC_WAVE", 1}, {"OSC_WT_MORPH", 0.45f}, {"OSC_GR_SPRAY", 0.75f}, {"OSC_CUTOFF", 6500}, {"OSC_AMP_ATK", 0.02f}, {"OSC_AMP_REL", 0.5f}, {"OSC_LEVEL", 0.7f}}},
+            {"Super Strings", {{"OSC_PART_TYPE", 5}, {"OSC_WAVE", 3}, {"OSC_WT_MORPH", 0.6f}, {"OSC_GR_SPRAY", 0.85f}, {"OSC_CUTOFF", 4200}, {"OSC_AMP_ATK", 0.45f}, {"OSC_AMP_REL", 1.4f}, {"OSC_LEVEL", 0.7f}}},
         };
         return p;
     }
@@ -110,14 +112,14 @@ namespace onep
             case OSC_AMP_DEC: one.setAmpDecay(v); break;
             case OSC_AMP_SUS: one.setAmpSustain(v); break;
             case OSC_AMP_REL: one.setAmpRelease(v); break;
-            case OSC_WT_MORPH: // a wavetable's position, and a granular oscillator's
+            case OSC_WT_MORPH: // a wavetable's position, a granular oscillator's (and through it SUPER's DETUNE)
                 one.setWtMorphPos(v * (tables > 1 ? static_cast<float>(tables - 1) : 1.0f));
                 one.setGrain(0, v);
                 one.setSampleStart(v);
                 break;
             case OSC_GR_SIZE: one.setGrain(1, v); break;
             case OSC_GR_DENSITY: one.setGrain(2, v); break;
-            case OSC_GR_SPRAY: one.setGrain(3, v); break;
+            case OSC_GR_SPRAY: one.setGrain(3, v); break; // and SUPER's SIDE
             case OSC_FM_ALGORITHM: one.setFMAlgorithm(static_cast<FMAlgorithm>(static_cast<int>(v + 0.5f))); break;
             case OSC_FM_MOD_RATIO: one.setFMModulatorRatio(v); break;
             case OSC_FM_MOD_INDEX: one.setFMModulationIndex(v); break;

@@ -4,7 +4,7 @@ Obs instruments: ObsSynthCT1, ObsSynth4D, ObsDrums as plugins (VST3 and CLAP)
 ObsSynthCT1   Cross Table One: five standard or wavetable operators cross-modulating through a 5 x 5 FM matrix
 ObsSynth4D    four oscillators (standard, wavetable, FM, granular), mod matrix, tube, delay, vector/XY
 ObsDrums      sixteen pads of synthesized and sampled drums, kits, a master bus
-ObsSynthOne   one oscillator with four engines and a sample player, a filter, envelopes, a small mod matrix
+ObsSynthOne   one oscillator with five engines and a sample player, a filter, envelopes, a small mod matrix
 
 Each plugin carries what it needs: its editor (the product's panel, a program of its own) and its wavetables
 (pcm/). Keep each folder whole.

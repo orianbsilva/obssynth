@@ -1,7 +1,8 @@
 // obssynthone: the ObsSynth One front panel (docs/mockups/obssynthone_mockup.py), a product of the panels' SDK
 // (common/panel_app.hpp: the window, the top bar, SETUP, the CC overlay, the presets, the keyboard, the drawing).
-// One oscillator with five engines (STD, WT, FM, GRAIN, SMP): its display shows the engine's own picture; the big
-// knob is the engine's position (the wavetable's frame, the FM index, the grains' read point, the sample's start);
+// One oscillator with six engines (STD, WT, FM, GRAIN, SMP, SUPER): its display shows the engine's own picture; the big
+// knob is the engine's position (the wavetable's frame, the FM index, the grains' read point, the sample's start,
+// SUPER's DETUNE);
 // then the filter, two envelopes, the tube, the delay and the master; the MOD page has two LFOs and four routes.
 // What is the One's here: its values (one_params.hpp, 0..1), its layout (laid out in 1280 x 780 units under its own
 // bar and drawn at the SDK's 1600 x 900: Z, OX, OY), its displays, its presets (the factory's in one_driver.hpp,
@@ -42,8 +43,13 @@ namespace
     constexpr float W = 1280, H = 780;
     constexpr float Z = (synth::panel::H - synth::panel::BAR) / (H - 58.0f);
     constexpr float OX = (synth::panel::W - W * Z) / 2, OY = synth::panel::BAR - 58.0f * Z;
-    constexpr int ENGINES = 5;
-    const char *kEngine[ENGINES] = {"STD", "WT", "FM", "GRAIN", "SMP"};
+    constexpr int ENGINES = kEngines;
+    const char *kEngine[ENGINES] = {"STD", "WT", "FM", "GRAIN", "SMP", "SUPER"};
+    // SUPER's shapes: the oscillator's wave (OSC_WAVE's values: SAW 1, SQR 2, TRI 3, SIN 0), PULSE playing as SQR and
+    // NOISE as SAW (synth::SuperEngine)
+    constexpr int kSuperWave[4] = {1, 2, 3, 0};
+    const char *kSuper[4] = {"SAW", "SQR", "TRI", "SIN"};
+    int superShape(int wave) { return wave == 0 ? 3 : wave == 2 || wave == 4 ? 1 : wave == 3 ? 2 : 0; }
     const char *kWave[6] = {"SIN", "SAW", "SQR", "TRI", "PLS", "NSE"};
     const char *kFilter[4] = {"LP", "HP", "BP", "NOTCH"};
 
@@ -201,12 +207,18 @@ namespace
         const float ry = 72;
         // the oscillator
         for (int i = 0; i < ENGINES; ++i)
-            choose(c, "OSC_PART_TYPE", i, ENGINES, 30 + static_cast<float>(i) * 56, ry + 52, 52, kEngine[i], i == eng);
+            choose(c, "OSC_PART_TYPE", i, ENGINES, 30 + static_cast<float>(i) * 50, ry + 52, 46, kEngine[i], i == eng);
         if (eng == 0)
         {
             const int w = std::clamp(static_cast<int>(std::lround(u.get(idOf("OSC_WAVE")) * 5)), 0, 5);
             for (int i = 0; i < 6; ++i)
                 choose(c, "OSC_WAVE", i, 6, 340 + static_cast<float>(i) * 46, ry + 52, 42, kWave[i], i == w);
+        }
+        if (eng == 5)
+        {
+            const int w = superShape(std::clamp(static_cast<int>(std::lround(u.get(idOf("OSC_WAVE")) * 5)), 0, 5));
+            for (int i = 0; i < 4; ++i)
+                choose(c, "OSC_WAVE", kSuperWave[i], 6, 340 + static_cast<float>(i) * 46, ry + 52, 42, kSuper[i], i == w);
         }
         if (eng == 4)
         {
@@ -238,6 +250,10 @@ namespace
             knob(c, "OSC_WT_MORPH", 78, ry + 206, 22, "READ", true);
             smallKnob("OSC_TUNE", "TUNE");
             break;
+        case 5:
+            knob(c, "OSC_WT_MORPH", 78, ry + 206, 22, "DETUNE", true);
+            smallKnob("OSC_TUNE", "TUNE");
+            break;
         default:
             knob(c, "OSC_WT_MORPH", 78, ry + 206, 22, "START", true);
             smallKnob("OSC_TUNE", "TUNE");
@@ -262,6 +278,8 @@ namespace
             smallKnob("OSC_GR_DENSITY", "DENS");
             smallKnob("OSC_GR_SPRAY", "SPRAY");
         }
+        else if (eng == 5)
+            smallKnob("OSC_GR_SPRAY", "SIDE");
         // the filter
         const int ft = std::clamp(static_cast<int>(std::lround(u.get(idOf("OSC_FILT_TYPE")) * 3)), 0, 3);
         for (int i = 0; i < 4; ++i)
@@ -305,8 +323,47 @@ namespace
     }
 
 
-    // ── the displays ────────────────────────────────────────────────────────────────────────────────
     // ── the displays ────────────────────────────────────────────────────────────────────────────────────
+    // SUPER's: the seven voices of its shape, the centre over the six spread by DETUNE, dimmer as SIDE lowers them
+    // (as ObsSynth4D draws it); the count and the shape's name, DETUNE and SIDE
+    void showSuper(Canvas &cv, float dx, float dy, float dw, float dh, int shape, float det, float side)
+    {
+        const panelkit::Theme &t = cv.theme;
+        static const char *names[] = {"7 SAWS", "7 SQUARES", "7 TRIANGLES", "7 SINES"};
+        cv.say(std::string("◀ ") + names[shape] + " ▶", dx + 8, dy + 14, 9, t.accent, 0.6f, false, true, 2, Align::Left);
+        char b[48];
+        std::snprintf(b, sizeof b, "DET %.0f%%  SIDE %.0f%%", static_cast<double>(det) * 100, static_cast<double>(side) * 100);
+        cv.say(b, dx + dw - 8, dy + 14, 9, t.accent, 0.6f, false, true, 2, Align::Right);
+        auto wave = [shape](float ph, float pw) {
+            ph -= std::floor(ph);
+            switch (shape)
+            {
+            case 1: return ph < pw ? 1.0f : -1.0f;
+            case 2: return ph < 0.5f ? 4 * ph - 1 : 3 - 4 * ph;
+            case 3: return std::sin(ph * 2 * static_cast<float>(M_PI));
+            default: return 2 * ph - 1;
+            }
+        };
+        static const float off[6] = {-1.0f, -0.57f, -0.18f, 0.18f, 0.56f, 0.98f};
+        const float x0 = dx + 12, w = dw - 24, mid = dy + dh / 2 + 6, amp = dh / 2 - 24, cycles = 4.0f;
+        for (int k = -1; k < 6; ++k)
+        {
+            const bool centre = k < 0;
+            // each side a little faster or slower (drawn larger than it sounds, to be seen) and from its own start
+            const float ratio = centre ? 1.0f : 1.0f + off[k] * det * 0.12f, start = centre ? 0.0f : 0.13f * static_cast<float>(k + 1);
+            const float pw = centre ? 0.5f : 0.5f + off[k] * det * 0.3f;
+            std::vector<SDL_FPoint> pts;
+            for (int i = 0; i <= 240; ++i)
+            {
+                const float x = static_cast<float>(i) / 240;
+                pts.push_back({x0 + x * w, mid - amp * wave(start + x * cycles * ratio, pw)});
+            }
+            if (centre)
+                cv.lines(pts, t.accent, 0.5f + 0.5f * (1 - 0.4f * side), 1.8f);
+            else
+                cv.lines(pts, t.trace, 0.12f + 0.5f * side, 1.0f);
+        }
+    }
     void showWave(Canvas &cv, float dx, float dy, float dw, float dh, int wave)
     {
         std::vector<SDL_FPoint> pts;
@@ -798,8 +855,8 @@ namespace
             cv.say(p.sub, p.x + p.w - 14, p.y + 22, 10, t.dim, 1, false, false, 1.5f, Align::Right);
         }
         cv.say("ENGINE", 30, 72 + 46, 10, t.ink, 1, true, false, 1.6f, Align::Left);
-        if (eng == 0)
-            cv.say("WAVE", 290, 72 + 46, 10, t.ink, 1, true, false, 1.6f, Align::Left);
+        if (eng == 0 || eng == 5)
+            cv.say(eng == 5 ? "SHAPE" : "WAVE", 340, 72 + 46, 10, t.ink, 1, true, false, 1.6f, Align::Left);
         cv.say("TYPE", 680, 72 + 46, 10, t.ink, 1, true, false, 1.6f, Align::Left);
 
         // the oscillator's display: the engine's picture
@@ -835,6 +892,9 @@ namespace
         case 3:
             cv.say("◀ GRAINS ▶", dx + 8, dy + 14, 9, t.accent, 0.6f, false, true, 2, Align::Left);
             showGrains(cv, dx, dy, dw, dh, pos, u.get(idOf("OSC_GR_SPRAY")), u.get(idOf("OSC_GR_SIZE")));
+            break;
+        case 5:
+            showSuper(cv, dx, dy, dw, dh, superShape(std::clamp(static_cast<int>(std::lround(u.get(idOf("OSC_WAVE")) * 5)), 0, 5)), pos, u.get(idOf("OSC_GR_SPRAY")));
             break;
         default:
         {

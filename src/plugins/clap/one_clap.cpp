@@ -1,12 +1,12 @@
-// ObsSynth One as a CLAP plugin (ObsSynthOne.clap): one oscillator with the four engines of the product line (standard,
-// wavetable, FM, granular), one filter, an amplitude and a filter envelope, the tube and the delay: the product
+// ObsSynth One as a CLAP plugin (ObsSynthOne.clap): one oscillator with six engines (standard, wavetable, FM, granular,
+// a sample player and SUPER, seven detuned voices of the wave), one filter, an amplitude and a filter envelope, the tube and the delay: the product
 // ObsSynthOne (products/obs_one), its own wiring over the engine ObsSynth4D uses. Its parameters keep 4D's names and
 // ranges (app/obssynth4d/params.hpp) (OSC_CUTOFF, OSC_AMP_ATK, GLB_DLY_FB...), so a host
 // that knows one of the synths knows the other; a language that wants Strudel's words converts them on its side.
 //   notes: one note port, CLAP or MIDI; the wheel (CC1), expression (CC11), bend and pressure as MIDI.
 //   params: 0..1 as the knobs turn (their text in their units), automatable; PROGRAM (not automatable) loads one of
 //     the factory's few presets.
-//   state: JSON, the values by name.
+//   state: JSON, the values by name; "engines" the engine switch's places (none: 5, a state from before SUPER).
 // The editor is the panel (obssynthone --remote LINK, app/obssynthone: docs/mockups/obssynthone_mockup.py), a program of its own
 // (remote_editor.hpp): a window of its own (floating), what it turns comes back as parameter changes the host records. The wavetable and the grains' recording are found as
 // ObsSynth4D finds them (beside the plugin, $OBS_PCM_DIR, ~/.local/share/obssynth4d, the source tree).
@@ -282,11 +282,11 @@ namespace
             switch (DEFS[id].idx)
             {
             case X_PART_TYPE:
-                engineValue = static_cast<float>(firstOf(value, {"std", "wt", "fm", "grain", "smp"}));
+                engineValue = static_cast<float>(firstOf(value, {"std", "wt", "fm", "grain", "smp", "super"}));
                 if (engineValue < 0) // the other names for them
-                    engineValue = static_cast<float>(firstOf(value, {"standard", "wavetable", "", "gr", "sample"}));
+                    engineValue = static_cast<float>(firstOf(value, {"standard", "wavetable", "", "gr", "sample", "supersaw"}));
                 if (engineValue < 0)
-                    engineValue = static_cast<float>(firstOf(value, {"", "", "", "granular", ""}));
+                    engineValue = static_cast<float>(firstOf(value, {"", "", "", "granular", "", "sup"}));
                 found = engineValue >= 0;
                 break;
             case OSC_WAVE:
@@ -500,6 +500,7 @@ namespace
         for (int i = 0; i < NPARAMS; ++i)
             v[DEFS[i].name] = s->value[static_cast<size_t>(i)].load();
         j["product"] = "ObsSynthOne", j["program"] = s->program.load(), j["values"] = v;
+        j["engines"] = kEngines; // the engine switch's places (an older state had 5: no SUPER)
         const std::string text = j.dump();
         const char *d = text.data();
         int64_t left = static_cast<int64_t>(text.size());
@@ -522,9 +523,15 @@ namespace
         const auto j = nlohmann::json::parse(text, nullptr, false);
         if (!j.is_object() || !j.contains("values"))
             return false;
+        const int had = j.value("engines", 5);
         for (const auto &[k, x] : j["values"].items())
             if (const int i = idOf(k); i >= 0 && x.is_number())
-                s->push({Change::Value, i, std::clamp(x.get<float>(), 0.0f, 1.0f)});
+            {
+                float n = std::clamp(x.get<float>(), 0.0f, 1.0f);
+                if (DEFS[i].idx == X_PART_TYPE) // the same engine in a switch of more places
+                    n = engineFromOlder(n, had);
+                s->push({Change::Value, i, n});
+            }
         s->rescan = true;
         return true;
     }
@@ -785,7 +792,7 @@ namespace
     const char *features[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SYNTHESIZER, CLAP_PLUGIN_FEATURE_STEREO, nullptr};
     const clap_plugin_descriptor_t descriptor{CLAP_VERSION_INIT, "org.carbonian.obssynthone", "ObsSynthOne", "Carbonian",
                                               "https://github.com/orianbsilva/obssynth", "", "", "0.1.0",
-                                              "One oscillator with four engines (standard, wavetable, FM, granular), a filter, envelopes, delay and tube", features};
+                                              "One oscillator with six engines (standard, wavetable, FM, granular, sample, super), a filter, envelopes, delay and tube", features};
 
     const clap_plugin_t *create(const clap_host_t *host)
     {

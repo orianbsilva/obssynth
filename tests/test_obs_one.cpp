@@ -99,3 +99,43 @@ TEST_CASE("ObsSynth One: lite (6 voices, control every 32 samples, 1x) sounds li
         CHECK(jumps[1] <= jumps[0] * 1.25 + 1e-3);
     }
 }
+
+TEST_CASE("ObsSynth One: SUPER is the engine's sixth place, and a state from before it keeps its engine")
+{
+    const int id = onep::idOf("OSC_PART_TYPE");
+    const onep::Range &rg = onep::rangeOf(id);
+    CHECK(static_cast<int>(std::lround(onep::toValue(rg, 1.0f))) == static_cast<int>(PartType::SUPER));
+    // five places (0, 1/4 .. 1): STD WT FM GRAIN SMP, the same engines at n / 5
+    for (int k = 0; k < 5; ++k)
+    {
+        const float n = onep::engineFromOlder(static_cast<float>(k) / 4.0f, 5);
+        CHECK(static_cast<int>(std::lround(onep::toValue(rg, n))) == k);
+    }
+    CHECK(onep::engineFromOlder(0.6f, onep::kEngines) == doctest::Approx(0.6f));
+}
+
+TEST_CASE("ObsSynth One: SUPER sounds, bounded, and DETUNE changes it")
+{
+    auto take = [](float detune) {
+        ObsSynthOne s(static_cast<float>(kRate));
+        onep::Driver dv{s};
+        onep::Values v = onep::defaults();
+        v[static_cast<size_t>(onep::idOf("OSC_PART_TYPE"))] = 1.0f;
+        v[static_cast<size_t>(onep::idOf("OSC_WT_MORPH"))] = detune;
+        v[static_cast<size_t>(onep::idOf("OSC_GR_SPRAY"))] = 1.0f;
+        onep::applyAll(dv, v);
+        Take t;
+        s.noteOn(57, 0.8f);
+        render(s, 0.5, t);
+        return t;
+    };
+    const Take flat = take(0.0f), wide = take(1.0f);
+    CHECK(flat.bad == 0);
+    CHECK(wide.bad == 0);
+    CHECK(wide.peak > 0.01);
+    CHECK(wide.peak <= 1.0);
+    double diff = 0;
+    for (size_t i = 0; i < std::min(flat.keep.size(), wide.keep.size()); ++i)
+        diff += std::fabs(static_cast<double>(flat.keep[i] - wide.keep[i]));
+    CHECK(diff > 1.0);
+}

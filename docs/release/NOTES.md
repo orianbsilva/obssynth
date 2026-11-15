@@ -8,7 +8,7 @@ programs.
 | **ObsSynthCT1** | *Cross Table One*: five operators, each a standard wave or a wavetable, cross-modulating through a 5 × 5 FM matrix; filter, drive, delay, reverb; 14 factory presets |
 | **ObsSynth4D** | four oscillators (standard, wavetable, FM, granular, SUPER), a mod matrix, tube, delay, vector and XY; 37 factory presets |
 | **ObsDrums** | sixteen pads, synthesized and sampled, factory kits, a master bus |
-| **ObsSynthOne** | one oscillator with four engines (standard, wavetable, FM, granular) and a sample player, a filter, envelopes, a small mod matrix, delay and tube |
+| **ObsSynthOne** | one oscillator with five engines (standard, wavetable, FM, granular, SUPER) and a sample player, a filter, envelopes, a small mod matrix, delay and tube |
 
 ## Downloads
 

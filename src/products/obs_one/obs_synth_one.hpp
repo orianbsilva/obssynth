@@ -1,6 +1,6 @@
 /**
  * @file obs_synth_one.hpp
- * @brief ObsSynth One: one oscillator with five engines (standard, wavetable, FM, granular, sample), its filter and envelopes,
+ * @brief ObsSynth One: one oscillator with six engines (standard, wavetable, FM, granular, sample, SUPER), its filter and envelopes,
  *        and a short master: the tube and the delay, each run only while it is heard.
  *
  * A product of its own over the same SynthEngine as ObsSynth4D (the voices, the oscillator chains, the engines), with

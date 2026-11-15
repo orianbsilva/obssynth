@@ -19,11 +19,12 @@ namespace onep
         bool glb;
         int idx;
     };
-    // what One has of its own, past 4D's lists (idx 1000 + k indexes EXTRA): the engine has a fifth value (sample), and the
-    // sample player's choice, loop and root note
+    // what One has of its own, past 4D's lists (idx 1000 + k indexes EXTRA): the engine has six values (4D's five
+    // places but the sample player's, SAMPLE, at 4, and SUPER at 5: synth::PartType's numbers), and the sample player's
+    // choice, loop and root note
     enum Extra { X_PART_TYPE = 1000, X_SMP_SAMPLE, X_SMP_LOOP, X_SMP_ROOT, X_MOD_SRC, X_MOD_DST, X_MOD_AMT, X_LFO_RATE, X_LFO_WAVE };
     constexpr Range EXTRA[] = {
-        {0, 4, 0, false, 5},     // engine: std wt fm gr smp
+        {0, 5, 0, false, 6},     // engine: std wt fm gr smp super (a state of 5 places, before SUPER: kEngines)
         {0, 63, 0, false, 64},   // sample: the index in the plugin's list
         {0, 1, 0, false, 2},     // loop
         {12, 108, 60, false, 97}, // root note, MIDI
@@ -34,9 +35,9 @@ namespace onep
         {0, 4, 0, false, 5},      // an LFO's shape: sine, triangle, square, saw, random
     };
     constexpr Def DEFS[] = {
-        {"OSC_PART_TYPE", false, X_PART_TYPE}, // the engine: std wt fm gr smp
+        {"OSC_PART_TYPE", false, X_PART_TYPE}, // the engine: std wt fm gr smp super
         {"OSC_WAVE", false, OSC_WAVE},
-        {"OSC_WT_MORPH", false, OSC_WT_MORPH}, // the position: the wavetable's frame, the grains' read point, the sample's start
+        {"OSC_WT_MORPH", false, OSC_WT_MORPH}, // the position: the wavetable's frame, the grains' read point, the sample's start, SUPER's DETUNE
         {"OSC_TUNE", false, OSC_TUNE},
         {"OSC_FINE_TUNE", false, OSC_FINE_TUNE},
         {"OSC_LEVEL", false, OSC_LEVEL},
@@ -63,7 +64,7 @@ namespace onep
         {"OSC_FM_OP2_LEVEL", false, OSC_FM_OP2_LEVEL},
         {"OSC_GR_SIZE", false, OSC_GR_SIZE},
         {"OSC_GR_DENSITY", false, OSC_GR_DENSITY},
-        {"OSC_GR_SPRAY", false, OSC_GR_SPRAY},
+        {"OSC_GR_SPRAY", false, OSC_GR_SPRAY}, // the grains' spray, SUPER's SIDE
         {"GLB_TUBE_DRV", true, GLB_TUBE_DRV},
         {"GLB_TUBE_ASYM", true, GLB_TUBE_ASYM},
         {"GLB_TUBE_MIX", true, GLB_TUBE_MIX},
@@ -86,6 +87,9 @@ namespace onep
     };
     constexpr int NPARAMS = static_cast<int>(sizeof DEFS / sizeof DEFS[0]);
     constexpr unsigned PROGRAM_ID = NPARAMS;
+    // the engine switch's places (a state saved before SUPER had 5: its OSC_PART_TYPE was place / 4)
+    constexpr int kEngines = 6;
+    inline float engineFromOlder(float n, int had) { return had == kEngines || had < 2 ? n : std::round(n * static_cast<float>(had - 1)) / static_cast<float>(kEngines - 1); }
 
     inline const char *const kModSources[9] = {"Off", "LFO 1", "LFO 2", "Filter Env", "Amp Env", "Velocity", "Wheel", "Key", "Random"};
     inline const char *const kModDests[8] = {"Position", "Cutoff", "Resonance", "Pitch", "Level", "Pan", "FM Index", "Filter Env"};
