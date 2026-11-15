@@ -64,6 +64,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile.cmake
 *.cmake
+!cmake/*.cmake
 
 # Generated local build artifacts
 sandbox/**/build/
