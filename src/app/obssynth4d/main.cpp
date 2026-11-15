@@ -1043,7 +1043,7 @@ namespace
     void piece(Canvas &cv, float cx, float cy, float rad, int kind, const std::string &hex, float alpha)
     {
         const int q = static_cast<int>(std::lround(rad * 2));
-        const float size = kind == 2 ? 32 : 24;
+        const float size = kind == 2 ? 32.0f : 24.0f;
         char k[64];
         std::snprintf(k, sizeof k, "rnd%d.%d.%s", kind, q, hex.c_str());
         auto it = cv.pieces.find(k);
@@ -1770,7 +1770,7 @@ namespace
             // the top bar and the play column
             cv.say("MAIN", 330, 35, 12, s.page == 0 ? t.ink : t.dim, 1, true, false, 2.5f, Centre);
             cv.say("MOD MATRIX", 460, 35, 12, s.page == 1 ? t.ink : t.dim, 1, true, false, 2.5f, Centre);
-            cv.rect(s.page == 0 ? 310 : 440, 44, 40, 2, t.accent);
+            cv.rect(s.page == 0 ? 310.0f : 440.0f, 44, 40, 2, t.accent);
             cv.say("MASTER", 1430, 34, 10, t.ink, 1, true, false, 1.6f, Right);
             if (s.page == 0)
                 cv.say("PLAY", 28, 94, 12, t.ink, 1, true, false, 2.4f, Left);
