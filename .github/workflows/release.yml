@@ -1,0 +1,165 @@
+name: Build and Release
+
+# A v* tag builds, tests and publishes a GitHub release with:
+#   ObsInstruments-<tag>-windows-x64-setup.exe  the Windows installer: VST3, CLAP and the programs where they go
+#   ObsPlugins-windows-x64.zip   every plugin as VST3 and CLAP (each with its editor and wavetables), to copy by hand
+#   ObsPlugins-linux-x64.tar.gz  the same for Linux (CLAP: editor in a window of its own; VST3: sound, no editor yet)
+#   synth-windows-x64.zip, synth-linux-x64.tar.gz  the standalone panels, the CLI and the examples
+# A tag with alpha, beta or rc in it is published as a pre-release. workflow_dispatch builds the packages only.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  # ── Windows: GitHub's windows-latest
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Version
+      id: version
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then v="${GITHUB_REF#refs/tags/}"; else v="dev-${GITHUB_SHA::7}"; fi
+        echo "version=$v" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DOBS_VST3=ON -S .
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Run Tests
+      working-directory: build
+      run: ctest --build-config Release --output-on-failure
+
+    - name: Validate the VST3s (Steinberg's validator)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # the VST3 SDK clap-wrapper fetched, built for its validator only
+        cmake -S build/src/plugins/clap/cpm/vst3sdk -B vst3sdk-build -DSMTG_ENABLE_VSTGUI_SUPPORT=OFF `
+          -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF -DSMTG_ENABLE_VST3_HOSTING_EXAMPLES=ON -DSMTG_ADD_VST3_UTILITIES=ON `
+          -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_PLUGIN_TARGET_USER_PROGRAM_FILES_COMMON=OFF
+        cmake --build vst3sdk-build --config Release --target validator
+        foreach ($v in Get-ChildItem "build\plugins\VST3\*.vst3") {
+          & vst3sdk-build\bin\Release\validator.exe $v.FullName
+          if ($LASTEXITCODE -ne 0) { throw "validator: $($v.Name) failed" }
+        }
+
+    # ── the plugins ──────────────────────────────────────────────────────────────────────────────────
+    - name: Package the plugins (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $out = "ObsPlugins-windows-x64"
+        New-Item -ItemType Directory -Force -Path "$out\VST3", "$out\CLAP" | Out-Null
+        Copy-Item -Path "build\plugins\VST3\*" -Destination "$out\VST3\" -Recurse -Force
+        Copy-Item -Path "build\plugins\CLAP\Release\*" -Destination "$out\CLAP\" -Recurse -Force
+        Copy-Item -Path "docs\release\INSTALL-plugins.txt" -Destination "$out\INSTALL.txt"
+        "${{ steps.version.outputs.version }}  $env:GITHUB_SHA" | Out-File -FilePath "$out\VERSION.txt" -Encoding UTF8
+        Compress-Archive -Path "$out\*" -DestinationPath "$out.zip"
+
+    # ── the standalone programs ──────────────────────────────────────────────────────────────────────
+    - name: Package the programs (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $out = "synth-windows-x64"
+        New-Item -ItemType Directory -Force -Path $out | Out-Null
+        Copy-Item -Path "build\bin\Release\*" -Destination "$out\" -Recurse -Force
+        Copy-Item -Path "build\src\app\Release\obs*.exe" -Destination "$out\" -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "pcm" -Destination "$out\pcm" -Recurse -Force
+        Copy-Item -Path "README.md" -Destination "$out\"
+        Copy-Item -Path "docs" -Destination "$out\docs" -Recurse -Force
+        "${{ steps.version.outputs.version }}  $env:GITHUB_SHA" | Out-File -FilePath "$out\VERSION.txt" -Encoding UTF8
+        Compress-Archive -Path "$out\*" -DestinationPath "$out.zip"
+
+    - name: The installer (Inno Setup)
+      shell: pwsh
+      run: |
+        # VST3 and CLAP where hosts look for them, the programs in Program Files (packaging/windows/ObsInstruments.iss)
+        $iscc = Get-ChildItem "C:\Program Files*\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $iscc) {
+          choco install innosetup -y --no-progress | Out-Null
+          $iscc = Get-ChildItem "C:\Program Files*\Inno Setup *\ISCC.exe" | Select-Object -First 1
+        }
+        & $iscc.FullName /Q "/DAppVersion=${{ steps.version.outputs.version }}" "/DVst3Dir=$PWD\ObsPlugins-windows-x64\VST3" `
+          "/DClapDir=$PWD\ObsPlugins-windows-x64\CLAP" "/DAppsDir=$PWD\synth-windows-x64" "/DOutDir=$PWD" packaging\windows\ObsInstruments.iss
+        if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+        Get-ChildItem ObsInstruments-*-setup.exe | Format-Table Name, Length
+
+    - name: Upload the packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages-windows-x64
+        path: |
+          ObsInstruments-*-windows-x64-setup.exe
+          ObsPlugins-windows-x64.zip
+          synth-windows-x64.zip
+        if-no-files-found: error
+        retention-days: 30
+
+  # ── Linux: inside ubuntu:24.04 by podman: glibc 2.39, so the packages load on Debian 13 and Ubuntu 24.04 on.
+  # gcc: libstdc++, on every Linux.
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build, test and package in ubuntu:24.04
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then v="${GITHUB_REF#refs/tags/}"; else v="dev-${GITHUB_SHA::7}"; fi
+        podman run --rm -v "$PWD":/src -w /src docker.io/library/ubuntu:24.04 bash -euc "
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends build-essential cmake git \
+            ca-certificates pkg-config python3 binutils libasound2-dev libpulse-dev libwayland-dev wayland-protocols \
+            libxkbcommon-dev libegl-dev libgl-dev libdrm-dev libgbm-dev libdecor-0-dev >/dev/null
+          git config --global --add safe.directory /src
+          .github/scripts/release-linux.sh '$v' '$GITHUB_SHA'"
+
+    - name: Upload the packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages-linux-x64
+        path: |
+          ObsPlugins-linux-x64.tar.gz
+          synth-linux-x64.tar.gz
+        if-no-files-found: error
+        retention-days: 30
+
+  # ── the release: what was built, into the tag's release (made here, or the one deb.yml made: its files stay)
+  release:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download the packages
+      uses: actions/download-artifact@v4
+      with:
+        path: packages
+        merge-multiple: true
+
+    - name: Release notes
+      run: |
+        sed -e "s|@VERSION@|${GITHUB_REF_NAME}|g" -e "s|@COMMIT@|${GITHUB_SHA::7}|g" docs/release/NOTES.md > RELEASE_NOTES.md
+        (cd packages && sha256sum * > SHA256SUMS.txt)
+
+    - name: Publish the release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Obs instruments ${{ github.ref_name }}
+        body_path: RELEASE_NOTES.md
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+        files: packages/*

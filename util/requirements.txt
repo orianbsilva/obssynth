@@ -1,0 +1,23 @@
+# Requirements for Waveform Drawer and WAV Bank Visualizer
+# 
+# These packages are needed to run the waveform drawing and visualization applications.
+# Install with: pip install -r requirements.txt
+
+# Core scientific computing
+numpy>=1.19.0
+
+# Audio file I/O (optional but recommended for 32-bit float support)
+scipy>=1.6.0
+
+# Plotting and visualization
+matplotlib>=3.3.0
+
+# GUI framework (usually included with Python)
+# tkinter is part of Python standard library, no installation needed
+
+# Audio playback and MIDI functionality
+pygame>=2.1.0  # For MIDI input and audio playback
+pyaudio>=0.2.11  # Alternative audio backend
+
+# Optional: Alternative MIDI library (more reliable on some systems)
+# python-rtmidi>=1.4.0  # Uncomment for rtmidi instead of pygame.midi

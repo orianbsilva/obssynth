@@ -1,0 +1,71 @@
+# The obssynth .deb (packaging/deb/build-deb.sh): the four panels and their CLAP plugins, for Debian 13 / Carbonian
+# 13 amd64, against the system's SDL3. Built on GitHub's ubuntu-latest inside a debian:trixie container. Each run
+# keeps the .deb as an artifact; a v* tag also puts it in the tag's release (made here when there is none yet: a tag
+# with alpha, beta or rc in it as a pre-release).
+name: Debian package (amd64)
+
+on:
+  push:
+    branches: [ "main", "ci/**" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+concurrency:
+  group: deb-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write # a tag's release
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    timeout-minutes: 45
+    steps:
+    - name: The build's packages
+      run: |
+        apt-get update -qq
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends git ca-certificates gh \
+          g++ cmake make pkg-config dpkg-dev fakeroot file libsdl3-dev libsdl3-image-dev libsdl3-ttf-dev \
+          libasound2-dev libpulse-dev >/dev/null
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # the tags: the package's version (git describe)
+
+    - name: The checkout belongs to another user
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: Build the package
+      run: packaging/deb/build-deb.sh dist
+
+    - name: Check it
+      run: |
+        deb=$(ls dist/obssynth_*.deb)
+        dpkg-deb -c "$deb" | grep -E "\.clap$|/usr/bin/"
+        rm -rf debx && mkdir debx && dpkg-deb -x "$deb" debx
+        # each plugin loads, plays and keeps its state (clap_render: no host, no window)
+        cmake --build build-deb -j"$(nproc)" --target clap_render >/dev/null
+        mkdir -p render-out
+        for c in debx/usr/lib/clap/ObsSynth/*.clap; do
+          ./build-deb/bin/clap_render "$c" render-out | tail -1
+        done
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: obssynth-deb-amd64
+        path: dist/obssynth_*.deb
+        retention-days: 30
+
+    - name: Into the tag's release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        if ! gh release view "$TAG" >/dev/null 2>&1; then
+          pre=""; case "$TAG" in *alpha*|*beta*|*rc*) pre="--prerelease";; esac
+          gh release create "$TAG" --title "$TAG" --generate-notes $pre
+        fi
+        gh release upload "$TAG" dist/obssynth_*.deb --clobber

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vstgui-ui-description version="1">
+	<fonts>
+		<font font-name="Arial" name="default" size="12"/>
+		<font font-name="Arial" name="normal" size="14"/>
+		<font font-name="Arial" name="title" size="16"/>
+		<font font-name="Arial" name="small" size="11"/>
+	</fonts>
+	<colors>
+		<color name="Background" rgba="#2a1f1aff"/>
+		<color name="Panel" rgba="#3d2e24ff"/>
+		<color name="Text" rgba="#ffffffff"/>
+		<color name="TextSecondary" rgba="#f0e0c0ff"/>
+		<color name="Knob" rgba="#cc7722ff"/>
+		<color name="KnobHandle" rgba="#ffffffff"/>
+		<color name="ButtonOff" rgba="#5c4a3dff"/>
+		<color name="ButtonOn" rgba="#ff9933ff"/>
+	</colors>
+	<template background-color="Background" background-color-draw-style="filled" class="CViewContainer" mouse-enabled="true" name="view" opacity="1" origin="0, 0" size="500, 400" transparent="false" wants-focus="false">
+		<view class="CKnob" control-tag="0" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="Text" handle-line-width="2" mouse-enabled="true" origin="50, 50" size="60, 60"/>
+		<view class="CTextLabel" font="default" font-color="Text" text="Volume" text-alignment="center" mouse-enabled="true" origin="40, 120" size="80, 20"/>
+		<view class="CKnob" control-tag="1" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="Text" handle-line-width="2" mouse-enabled="true" origin="150, 50" size="60, 60"/>
+		<view class="CTextLabel" font="default" font-color="Text" text="Filter" text-alignment="center" mouse-enabled="true" origin="140, 120" size="80, 20"/>
+		<view class="CKnob" control-tag="2" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="Text" handle-line-width="2" mouse-enabled="true" origin="250, 50" size="60, 60"/>
+		<view class="CTextLabel" font="default" font-color="Text" text="Resonance" text-alignment="center" mouse-enabled="true" origin="240, 120" size="80, 20"/>
+	</template>
+	<custom>
+		<attributes name="FocusDrawing"/>
+		<attributes Path="sample_synth.uidesc" name="VST3Editor"/>
+		<attributes SelectedTemplate="view" name="UITemplateController"/>
+	</custom>
+	<bitmaps/>
+</vstgui-ui-description>

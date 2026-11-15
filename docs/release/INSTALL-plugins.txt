@@ -1,0 +1,37 @@
+Obs instruments: ObsSynthCT1, ObsSynth4D, ObsDrums as plugins (VST3 and CLAP)
+==============================================================================
+
+ObsSynthCT1   Cross Table One: five standard or wavetable operators cross-modulating through a 5 x 5 FM matrix
+ObsSynth4D    four oscillators (standard, wavetable, FM, granular), mod matrix, tube, delay, vector/XY
+ObsDrums      sixteen pads of synthesized and sampled drums, kits, a master bus
+ObsSynthOne   one oscillator with four engines and a sample player, a filter, envelopes, a small mod matrix
+
+Each plugin carries what it needs: its editor (the product's panel, a program of its own) and its wavetables
+(pcm/). Keep each folder whole.
+
+WINDOWS (x64, Windows 10 or later)
+  First: the zip is not signed. Right-click it > Properties > "Unblock", then extract (else Windows may stop
+  the editors' programs).
+  VST3   copy the folders in VST3\ (ObsSynthCT1.vst3, ...) to
+           C:\Program Files\Common Files\VST3\
+         (administrator rights). In Ableton Live: Preferences > Plug-ins > "Use VST3 Plug-in System Folders" on,
+         then Rescan. They are under Plug-ins > Carbonian.
+  CLAP   copy everything in CLAP\ (the .clap files, the obs*.exe panels, pcm\) to
+           C:\Program Files\Common Files\CLAP\
+         (Bitwig, REAPER, and other CLAP hosts).
+  The editor opens inside the host's plugin window. No Visual C++ redistributable is needed.
+
+LINUX (x86_64)
+  CLAP   copy everything in CLAP/ to ~/.clap/ (or /usr/lib/clap/). The editor opens in a window of its own
+         (Wayland). Bitwig, REAPER, and other CLAP hosts.
+  VST3   copy the folders in VST3/ to ~/.vst3/. Sound, parameters, presets and state work; the editor is not
+         shown yet inside a Linux VST3 host (use the CLAP for the editor).
+
+IN A HOST
+  - Recordings: pcm/ carries two (VCSL, CC0: pcm/SAMPLES.md): ObsSynth4D's granular oscillators start with the
+    organ (Linux: the ALSA test voice when present), ObsDrums' USER 3 and USER 4 pads with the cowbell and the
+    organ. Your own: WAV files in the samples folder (%APPDATA%\obssynth4d\samples, ~/.local/share/obssynth4d/samples).
+  - The PROGRAM parameter picks a factory preset (a kit, on ObsDrums).
+  - The editor's SETUP shows LOOK: the colours (eight palettes); audio and MIDI are the host's.
+  - If an editor does not show, its log says why: %TEMP%\ObsSynthCT1.log (Windows) or /tmp/ObsSynthCT1.log
+    (Linux); ObsSynth4D.log, ObsDrums.log likewise.

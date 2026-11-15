@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vstgui-ui-description version="1">
+	<fonts>
+		<font font-name="Arial" name="default" size="10"/>
+		<font font-name="Arial" name="normal" size="12"/>
+		<font font-name="Arial" name="title" size="14"/>
+		<font font-name="Arial" name="small" size="9"/>
+		<font font-name="Arial" name="header" size="16"/>
+	</fonts>
+	<colors>
+		<color name="Background" rgba="#1a1a1aff"/>
+		<color name="Panel" rgba="#2a2a2aff"/>
+		<color name="Text" rgba="#f0f0f0ff"/>
+		<color name="TextSecondary" rgba="#ccccccff"/>
+		<color name="Knob" rgba="#cc7722ff"/>
+		<color name="KnobHandle" rgba="#ffffffff"/>
+		<color name="ButtonOff" rgba="#444444ff"/>
+		<color name="ButtonOn" rgba="#ff9933ff"/>
+		<color name="Border" rgba="#555555ff"/>
+		<color name="Highlight" rgba="#ffaa44ff"/>
+	</colors>
+	<template background-color="Background" background-color-draw-style="filled" class="CViewContainer" mouse-enabled="true" name="view" opacity="1" origin="0, 0" size="500, 300" transparent="false" wants-focus="false">
+		<!-- MASTER Section -->
+		<view class="CViewContainer" background-color="Panel" origin="10, 10" size="120, 80" transparent="false"/>
+		<view class="CTextLabel" font="header" font-color="ButtonOn" text="MASTER" text-alignment="center" back-color="ButtonOn" origin="10, 10" size="120, 20"/>
+		<view class="CKnob" control-tag="0" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="20, 35" size="40, 40"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Volume" text-alignment="center" origin="15, 75" size="50, 15"/>
+		<view class="CKnob" control-tag="1" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="70, 35" size="40, 40"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Pan" text-alignment="center" origin="65, 75" size="50, 15"/>
+		
+		<!-- OSCILLATOR Section -->
+		<view class="CViewContainer" background-color="Panel" origin="140, 10" size="150, 120" transparent="false"/>
+		<view class="CTextLabel" font="header" font-color="ButtonOn" text="OSCILLATOR" text-alignment="center" back-color="ButtonOn" origin="140, 10" size="150, 20"/>
+		<view class="COptionMenu" control-tag="2" font="default" font-color="Text" back-color="ButtonOff" frame-color="Border" title="Waveform" origin="155, 35" size="120, 20"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="🎵" text-alignment="center" origin="270, 35" size="15, 20"/>
+		<view class="CKnob" control-tag="3" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="155, 65" size="40, 40"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Volume" text-alignment="center" origin="150, 105" size="50, 15"/>
+		
+		<!-- ADSR ENVELOPE Section -->
+		<view class="CViewContainer" background-color="Panel" origin="300, 10" size="190, 120" transparent="false"/>
+		<view class="CTextLabel" font="header" font-color="ButtonOn" text="ADSR ENVELOPE" text-alignment="center" back-color="ButtonOn" origin="300, 10" size="190, 20"/>
+		<view class="CKnob" control-tag="4" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="310, 35" size="35, 35"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Attack" text-alignment="center" origin="305, 75" size="45, 15"/>
+		<view class="CKnob" control-tag="5" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="355, 35" size="35, 35"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Decay" text-alignment="center" origin="350, 75" size="45, 15"/>
+		<view class="CKnob" control-tag="6" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="400, 35" size="35, 35"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Sustain" text-alignment="center" origin="395, 75" size="45, 15"/>
+		<view class="CKnob" control-tag="7" angle-range="270" angle-start="135" circle-drawing="true" corona-drawing="true" handle-color="KnobHandle" handle-line-width="2" origin="445, 35" size="35, 35"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Release" text-alignment="center" origin="440, 75" size="45, 15"/>
+		<view class="CSlider" control-tag="8" handle-color="KnobHandle" back-color="ButtonOff" origin="310, 95" size="170, 20"/>
+		<view class="CTextLabel" font="small" font-color="Text" text="Dry/Wet" text-alignment="center" origin="350, 115" size="50, 15"/>
+		
+		<!-- Bottom visualization area -->
+		<view class="CViewContainer" background-color="#000000ff" origin="10, 140" size="480, 150" transparent="false"/>
+	</template>
+	<custom>
+		<attributes name="FocusDrawing"/>
+		<attributes Path="professional_synth.uidesc" name="VST3Editor"/>
+		<attributes SelectedTemplate="view" name="UITemplateController"/>
+	</custom>
+	<bitmaps/>
+</vstgui-ui-description>

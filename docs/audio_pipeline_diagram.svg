@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients for better visual appeal -->
+    <linearGradient id="inputGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#45a049;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="processGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="effectGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9800;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F57C00;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="outputGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9C27B0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7B1FA2;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1" />
+
+  <!-- Title -->
+  <text x="600" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold"
+    text-anchor="middle" fill="#333">
+    MIDI Synthesizer with Reverb - Audio Pipeline
+  </text>
+
+  <!-- MIDI Input Section -->
+  <g id="midi-input">
+    <rect x="50" y="80" width="180" height="120" rx="10" fill="url(#inputGrad)" stroke="#388E3C"
+      stroke-width="2" />
+    <text x="140" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">MIDI Input</text>
+
+    <!-- MIDI Controllers -->
+    <text x="140" y="125" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Note On/Off</text>
+    <text x="140" y="140" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Velocity (0-127)</text>
+    <text x="140" y="155" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">CC 21-27</text>
+    <text x="140" y="170" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Aftertouch</text>
+    <text x="140" y="185" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Keyboard Keys</text>
+  </g>
+
+  <!-- Control Parameters Panel -->
+  <g id="control-params">
+    <rect x="50" y="250" width="180" height="200" rx="10" fill="#E8F5E8" stroke="#4CAF50"
+      stroke-width="2" />
+    <text x="140" y="275" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="#2E7D32">Control Parameters</text>
+
+    <!-- ADSR Controls -->
+    <text x="60" y="295" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      fill="#2E7D32">ADSR Envelope:</text>
+    <text x="70" y="310" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC21: Attack
+      (0.01-1.0s)</text>
+    <text x="70" y="325" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC22: Decay
+      (0.01-5.0s)</text>
+    <text x="70" y="340" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC23: Sustain
+      (0.01-0.7)</text>
+    <text x="70" y="355" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC24: Release
+      (0.01-5.0s)</text>
+
+    <!-- Reverb Controls -->
+    <text x="60" y="375" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      fill="#2E7D32">Reverb Effect:</text>
+    <text x="70" y="390" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC25: Room
+      Size (0-100%)</text>
+    <text x="70" y="405" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC26: Damping
+      (0-100%)</text>
+    <text x="70" y="420" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">CC27: Mix
+      (0-100%)</text>
+
+    <!-- Keyboard Controls -->
+    <text x="60" y="440" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      fill="#2E7D32">Keyboard:</text>
+    <text x="70" y="455" font-family="Arial, sans-serif" font-size="10" fill="#388E3C">'v': Reverb
+      On/Off, 'p': Presets</text>
+  </g>
+
+  <!-- Oscillator -->
+  <g id="oscillator">
+    <rect x="300" y="80" width="160" height="120" rx="10" fill="url(#processGrad)" stroke="#1565C0"
+      stroke-width="2" />
+    <text x="380" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">Enveloped Oscillator</text>
+
+    <text x="380" y="125" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Frequency (MIDI → Hz)</text>
+    <text x="380" y="140" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Amplitude (Velocity)</text>
+    <text x="380" y="155" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Wave: Sine/Square/Saw</text>
+    <text x="380" y="170" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">ADSR Envelope</text>
+    <text x="380" y="185" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">44.1kHz/32-bit Float</text>
+  </g>
+
+  <!-- LFO -->
+  <g id="lfo">
+    <rect x="300" y="250" width="160" height="100" rx="10" fill="url(#processGrad)" stroke="#1565C0"
+      stroke-width="2" />
+    <text x="380" y="275" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">LFO Modulation</text>
+
+    <text x="380" y="295" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Frequency Modulation</text>
+    <text x="380" y="310" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">2Hz Default, 1-120Hz</text>
+    <text x="380" y="325" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Sine/Triangle/Square/Saw</text>
+    <text x="380" y="340" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Amplitude: 0-100%</text>
+  </g>
+
+  <!-- Schroeder Reverb -->
+  <g id="reverb">
+    <rect x="520" y="80" width="200" height="270" rx="10" fill="url(#effectGrad)" stroke="#E65100"
+      stroke-width="2" />
+    <text x="620" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">Schroeder Reverb</text>
+
+    <!-- Comb Filters -->
+    <rect x="530" y="120" width="180" height="80" rx="5" fill="#FFF3E0" stroke="#FF9800"
+      stroke-width="1" />
+    <text x="620" y="135" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      text-anchor="middle" fill="#E65100">4 Parallel Comb Filters</text>
+    <text x="620" y="150" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Delays: 1116, 1188, 1277, 1356</text>
+    <text x="620" y="165" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Feedback + Damping</text>
+    <text x="620" y="180" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Room Size Control</text>
+    <text x="620" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">High-Freq Damping</text>
+
+    <!-- All-Pass Filters -->
+    <rect x="530" y="210" width="180" height="60" rx="5" fill="#FFF3E0" stroke="#FF9800"
+      stroke-width="1" />
+    <text x="620" y="225" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      text-anchor="middle" fill="#E65100">2 Series All-Pass Filters</text>
+    <text x="620" y="240" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Delays: 556, 441 samples</text>
+    <text x="620" y="255" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Diffusion + Density</text>
+
+    <!-- Presets -->
+    <rect x="530" y="280" width="180" height="60" rx="5" fill="#FFF3E0" stroke="#FF9800"
+      stroke-width="1" />
+    <text x="620" y="295" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      text-anchor="middle" fill="#E65100">Presets</text>
+    <text x="620" y="310" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Small Room | Medium Room</text>
+    <text x="620" y="325" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+      fill="#F57C00">Large Hall | Custom</text>
+  </g>
+
+  <!-- Recording -->
+  <g id="recording">
+    <rect x="780" y="120" width="140" height="100" rx="10" fill="url(#outputGrad)" stroke="#6A1B9A"
+      stroke-width="2" />
+    <text x="850" y="145" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">WAV Recording</text>
+
+    <text x="850" y="165" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">24-bit / 44.1kHz</text>
+    <text x="850" y="180" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Mono Channel</text>
+    <text x="850" y="195" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Real-time Buffer</text>
+    <text x="850" y="210" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Thread-safe</text>
+  </g>
+
+  <!-- Audio Output -->
+  <g id="audio-output">
+    <rect x="780" y="280" width="140" height="100" rx="10" fill="url(#outputGrad)" stroke="#6A1B9A"
+      stroke-width="2" />
+    <text x="850" y="305" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="white">Audio Output</text>
+
+    <text x="850" y="325" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">ALSA/PulseAudio</text>
+    <text x="850" y="340" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Real-time Callback</text>
+    <text x="850" y="355" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Zero Latency</text>
+    <text x="850" y="370" font-family="Arial, sans-serif" font-size="11" text-anchor="middle"
+      fill="white">Buffer Size: 512-2048</text>
+  </g>
+
+  <!-- Performance Specs -->
+  <g id="performance">
+    <rect x="980" y="120" width="180" height="150" rx="10" fill="#F5F5F5" stroke="#757575"
+      stroke-width="2" />
+    <text x="1070" y="145" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="#424242">Performance Specs</text>
+
+    <text x="990" y="165" font-family="Arial, sans-serif" font-size="11" fill="#616161">• CPU Usage:
+      2-5%</text>
+    <text x="990" y="180" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Memory:
+      ~32KB buffers</text>
+    <text x="990" y="195" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Latency:
+      &lt; 10ms</text>
+    <text x="990" y="210" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Sample
+      Rate: 44.1kHz</text>
+    <text x="990" y="225" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Bit Depth:
+      32-bit float</text>
+    <text x="990" y="240" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Channels:
+      Mono</text>
+    <text x="990" y="255" font-family="Arial, sans-serif" font-size="11" fill="#616161">• Platform:
+      Linux/Windows</text>
+  </g>
+
+  <!-- Signal Flow Arrows -->
+  <!-- MIDI to Oscillator -->
+  <line x1="230" y1="140" x2="300" y2="140" stroke="#333" stroke-width="3"
+    marker-end="url(#arrowhead)" />
+
+  <!-- Oscillator to LFO feedback -->
+  <line x1="380" y1="200" x2="380" y2="250" stroke="#666" stroke-width="2"
+    marker-end="url(#arrowhead)" />
+  <line x1="360" y1="300" x2="300" y2="180" stroke="#666" stroke-width="2"
+    marker-end="url(#arrowhead)" stroke-dasharray="5,5" />
+
+  <!-- Oscillator to Reverb -->
+  <line x1="460" y1="140" x2="520" y2="140" stroke="#333" stroke-width="3"
+    marker-end="url(#arrowhead)" />
+
+  <!-- Reverb to Recording -->
+  <line x1="720" y1="170" x2="780" y2="170" stroke="#333" stroke-width="3"
+    marker-end="url(#arrowhead)" />
+
+  <!-- Reverb to Audio Output -->
+  <line x1="720" y1="200" x2="750" y2="200" stroke="#333" stroke-width="3" />
+  <line x1="750" y1="200" x2="750" y2="330" stroke="#333" stroke-width="3" />
+  <line x1="750" y1="330" x2="780" y2="330" stroke="#333" stroke-width="3"
+    marker-end="url(#arrowhead)" />
+
+  <!-- Control Parameters to Oscillator -->
+  <line x1="230" y1="300" x2="300" y2="180" stroke="#4CAF50" stroke-width="2"
+    marker-end="url(#arrowhead)" stroke-dasharray="3,3" />
+
+  <!-- Control Parameters to Reverb -->
+  <line x1="230" y1="350" x2="520" y2="250" stroke="#FF9800" stroke-width="2"
+    marker-end="url(#arrowhead)" stroke-dasharray="3,3" />
+
+  <!-- Data Flow Labels -->
+  <text x="265" y="130" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+    fill="#333">MIDI Data</text>
+  <text x="490" y="130" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+    fill="#333">Audio Samples</text>
+  <text x="750" y="160" font-family="Arial, sans-serif" font-size="10" text-anchor="middle"
+    fill="#333">Processed Audio</text>
+
+  <!-- Control Flow Labels -->
+  <text x="265" y="290" font-family="Arial, sans-serif" font-size="9" text-anchor="middle"
+    fill="#4CAF50">CC21-24</text>
+  <text x="350" y="240" font-family="Arial, sans-serif" font-size="9" text-anchor="middle"
+    fill="#FF9800">CC25-27</text>
+
+  <!-- LFO Modulation Label -->
+  <text x="320" y="240" font-family="Arial, sans-serif" font-size="9" text-anchor="middle"
+    fill="#666">Freq Mod</text>
+
+  <!-- Algorithm Info -->
+  <g id="algorithm-info">
+    <rect x="50" y="500" width="1100" height="120" rx="10" fill="#E3F2FD" stroke="#1976D2"
+      stroke-width="2" />
+    <text x="600" y="525" font-family="Arial, sans-serif" font-size="16" font-weight="bold"
+      text-anchor="middle" fill="#1565C0">Schroeder Reverb Algorithm (1961)</text>
+
+    <text x="70" y="550" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+      fill="#1976D2">Mathematical Model:</text>
+    <text x="70" y="570" font-family="Arial, sans-serif" font-size="11" fill="#1565C0">Comb Filter:
+      y[n] = x[n] + feedback × damped_delay[n]</text>
+    <text x="70" y="585" font-family="Arial, sans-serif" font-size="11" fill="#1565C0">All-Pass:
+      y[n] = -gain × x[n] + delay[n], delay_input[n] = x[n] + gain × delay[n]</text>
+    <text x="70" y="600" font-family="Arial, sans-serif" font-size="11" fill="#1565C0">Final Mix:
+      output = dry_level × input + wet_level × reverb_output</text>
+  </g>
+
+  <!-- Audio Thread Info -->
+  <g id="thread-info">
+    <rect x="50" y="650" width="550" height="80" rx="10" fill="#FFF8E1" stroke="#F57C00"
+      stroke-width="2" />
+    <text x="325" y="675" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="#E65100">Real-time Audio Thread</text>
+    <text x="70" y="695" font-family="Arial, sans-serif" font-size="11" fill="#F57C00">•
+      High-priority thread with lock-free audio callback</text>
+    <text x="70" y="710" font-family="Arial, sans-serif" font-size="11" fill="#F57C00">•
+      Buffer-based processing: generateBuffer() → processBuffer() → output</text>
+    <text x="70" y="725" font-family="Arial, sans-serif" font-size="11" fill="#F57C00">• Thread-safe
+      recording with mutex-protected circular buffer</text>
+  </g>
+
+  <!-- Implementation Info -->
+  <g id="implementation-info">
+    <rect x="620" y="650" width="530" height="80" rx="10" fill="#F3E5F5" stroke="#7B1FA2"
+      stroke-width="2" />
+    <text x="885" y="675" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+      text-anchor="middle" fill="#6A1B9A">Implementation Details</text>
+    <text x="640" y="695" font-family="Arial, sans-serif" font-size="11" fill="#7B1FA2">• Files:
+      test_midi.cpp, reverb.hpp/cpp, platform_midi_reader.hpp</text>
+    <text x="640" y="710" font-family="Arial, sans-serif" font-size="11" fill="#7B1FA2">•
+      Dependencies: ALSA/PulseAudio, system MIDI, no external audio libs</text>
+    <text x="640" y="725" font-family="Arial, sans-serif" font-size="11" fill="#7B1FA2">• Build:
+      CMake, C++17, cross-platform (Linux/Windows)</text>
+  </g>
+
+  <!-- Signal Path Highlight -->
+  <rect x="45" y="75" width="1110" height="290" rx="15" fill="none" stroke="#FF5722"
+    stroke-width="3" stroke-dasharray="10,5" opacity="0.3" />
+  <text x="600" y="95" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+    text-anchor="middle" fill="#FF5722">Main Signal Path</text>
+</svg>

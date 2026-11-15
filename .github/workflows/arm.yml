@@ -1,0 +1,133 @@
+# 32-bit ARM builds: armv6 (Raspberry Pi 1 and Zero), armv7 (any armhf) and armv7 with NEON (Raspberry Pi 2 and on).
+# They run on GitHub's ubuntu-latest: each job does its work inside a container it starts itself (Podman).
+# armv7 and armv7+NEON are cross-compiled in Debian bookworm (gcc-arm-linux-gnueabihf, the armhf libraries by
+# multiarch) and their tests run under qemu-user. armv6 is built inside Raspbian (archive.raspbian.org: its userland
+# is armv6+VFP; Debian's and Ubuntu's armhf are armv7) under qemu-arm (binfmt, set up by docker/setup-qemu-action), with QEMU_CPU=arm1176 so that
+# an armv7 instruction fails. balenalib's image, not dtcooper/raspberrypi-os: that one installs from Debian's armv7 archive.
+# Both against bookworm (glibc 2.36): the binaries load on Raspberry Pi OS bookworm and anything newer (built on
+# Ubuntu 24.04 they needed GLIBC_2.38 and GLIBCXX_3.4.32). A step fails the build past that.
+name: ARM (armv6, armv7, armv7+NEON)
+
+on:
+  push:
+    branches: [ "main", "ci/**" ]
+    tags: [ "v*" ] # a tag: the tarballs also go into its release (made here when there is none yet, as deb.yml does)
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write # a tag's release
+
+concurrency: # main's runs queue (each commit gets its result); a pull request's newer push replaces its run
+  group: arm-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  armv7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: armv7
+            flags: -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
+          - name: armv7-neon
+            flags: -march=armv7-a -mfpu=neon-vfpv4 -mtune=cortex-a7 -mfloat-abi=hard
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cross-build, test under qemu-user, check and package, inside Debian bookworm (podman)
+      run: |
+        podman run --rm -v "$PWD":/src -w /src -e F="${{ matrix.flags }}" -e NAME="${{ matrix.name }}" docker.io/library/debian:bookworm bash -euo pipefail -c '
+          dpkg --add-architecture armhf
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            crossbuild-essential-armhf qemu-user cmake git ca-certificates file pkg-config libwayland-bin wayland-protocols \
+            libasound2-dev:armhf libwayland-dev:armhf libxkbcommon-dev:armhf libegl-dev:armhf >/dev/null
+          export CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ QEMU_CPU=cortex-a7
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armhf.cmake -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F"
+          cmake --build build -j"$(nproc)"
+          (cd build && ctest --output-on-failure -LE benchmark)
+          file build/bin/synth_cli build/src/app/obssynth4d
+          # they load on glibc 2.36 (Raspberry Pi OS bookworm) and newer
+          for f in build/bin/synth_cli build/src/app/obssynth4d; do
+            v=$(arm-linux-gnueabihf-objdump -T "$f" | grep -oE "GLIBC_[0-9]+\.[0-9]+" | sed "s/GLIBC_//" | sort -Vu | tail -1)
+            echo "$f needs glibc $v"
+            if [ "$(printf "%s\n2.36\n" "$v" | sort -V | tail -1)" != 2.36 ]; then echo "past glibc 2.36"; exit 1; fi
+          done
+          # NEON in the NEON build only (vfpv3-d16 has no Q registers)
+          n=$(arm-linux-gnueabihf-objdump -d build/src/app/obssynth4d | grep -cE "\sv[a-z0-9.]+\s+q[0-9]" || true)
+          echo "instructions on NEON Q registers: $n"
+          if [ "$NAME" = armv7 ] && [ "$n" -gt 0 ]; then echo "NEON in the armv7 build"; exit 1; fi
+          mkdir -p out/synth-linux-$NAME
+          for b in build/bin/synth_cli build/src/app/synth_cli_v2 build/src/app/obssynth4d build/src/app/obsdrums build/src/app/obssynthct1 build/src/app/obssynthone; do
+            [ -f "$b" ] && cp "$b" out/synth-linux-$NAME/
+          done
+          cp -r pcm res out/synth-linux-$NAME/
+          tar -czf synth-linux-$NAME.tar.gz -C out synth-linux-$NAME'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: synth-linux-${{ matrix.name }}
+        path: synth-linux-${{ matrix.name }}.tar.gz
+        retention-days: 14
+
+    - name: Into the tag's release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        if ! gh release view "$TAG" >/dev/null 2>&1; then
+          pre=""; case "$TAG" in *alpha*|*beta*|*rc*) pre="--prerelease";; esac
+          gh release create "$TAG" --title "$TAG" --generate-notes $pre || gh release view "$TAG" >/dev/null # another job made it meanwhile
+        fi
+        gh release upload "$TAG" synth-linux-${{ matrix.name }}.tar.gz --clobber
+
+  armv6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: docker/setup-qemu-action@v3 # qemu-arm in binfmt, for the armv6 container
+      with:
+        platforms: arm
+
+    - name: Build and test inside Raspbian (armv6+VFP), QEMU as an ARM1176 (podman, the host's qemu-arm)
+      timeout-minutes: 90 # a hung QEMU must not hold the runner for hours
+      run: |
+        podman run --rm --platform linux/arm/v6 -e QEMU_CPU=arm1176 \
+          -v "$PWD":/src -w /src docker.io/balenalib/raspberry-pi-debian:bookworm bash -euo pipefail -c '
+            uname -m
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends build-essential cmake git ca-certificates pkg-config libasound2-dev binutils >/dev/null
+            F="-march=armv6 -mfpu=vfp -mfloat-abi=hard"
+            # the panels need SDL3 (built from source: hours under QEMU) and a Wayland session: not for a Pi 1
+            cmake -B build-armv6 -DCMAKE_BUILD_TYPE=Release -DOBS_PANELS=OFF -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F"
+            cmake --build build-armv6 -j"$(nproc)" --target synth_cli synth_core_tests
+            ./build-armv6/bin/Release/synth_core_tests
+            readelf -A build-armv6/bin/synth_cli | grep -E "Tag_CPU_arch:|Tag_THUMB_ISA_use|Tag_FP_arch"
+            readelf -A build-armv6/bin/synth_cli | grep -qE "Tag_CPU_arch: v6$" || { echo "not an armv6 binary"; exit 1; }
+            mkdir -p out/synth-linux-armv6 && cp build-armv6/bin/synth_cli out/synth-linux-armv6/ && cp -r pcm res out/synth-linux-armv6/
+            tar -czf synth-linux-armv6.tar.gz -C out synth-linux-armv6'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: synth-linux-armv6
+        path: synth-linux-armv6.tar.gz
+        retention-days: 14
+
+    - name: Into the tag's release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        if ! gh release view "$TAG" >/dev/null 2>&1; then
+          pre=""; case "$TAG" in *alpha*|*beta*|*rc*) pre="--prerelease";; esac
+          gh release create "$TAG" --title "$TAG" --generate-notes $pre || gh release view "$TAG" >/dev/null # another job made it meanwhile
+        fi
+        gh release upload "$TAG" synth-linux-armv6.tar.gz --clobber

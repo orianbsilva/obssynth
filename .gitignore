@@ -1,0 +1,152 @@
+# Build artifacts
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Compiled Dynamic libraries
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+*.bmp
+
+# Visual Studio / MSVC
+*.vcxproj*
+*.sln
+*.suo
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.log
+*.scc
+Debug/
+Release/
+# Windows ignores case: Release/ (the build folder) would take the release notes too
+!docs/release/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# MinGW
+*.a
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.cmake
+*.cmake
+
+# Generated local build artifacts
+sandbox/**/build/
+wavoutput/*.wav
+**/*.tlog
+**/*.recipe
+**/*.lastbuildstate
+
+# GCC/Clang
+*.gch
+*.pch
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.cbp
+*.dev
+*.layout
+*.depend
+
+# Backup files
+*.bak
+*.orig
+
+# Windows
+ehthumbs.db
+Desktop.ini
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs
+*.log
+build_errors.txt
+build_log.txt
+crash_log.txt
+crash_stderr.txt
+crash_stdout.txt
+
+# Runtime files (coredumps only — do NOT ignore src/lib/synth/core/)
+/core
+core.[0-9]*
+vgcore.*
+
+# Generated audio files (from examples)
+# Note: Original test files are tracked for demo purposes
+# *.wav
+
+# Package files (if using package managers)
+vcpkg_installed/
+conan/
+midi_session.wav
+
+# Checkpoints de sessão
+.checkpoints/
+
+# the .deb (packaging/deb/build-deb.sh)
+build-deb/
+dist/
+
+# local only: AI assistant files, notes, generated junk
+CLAUDE.md
+.claude/
+.mcp.json
+.github/copilot-instructions.md
+.github/chatmodes/
+.github/instructions/
+.github/prompts/
+PLAN.md
+tasks/
+pdfs/
+imgui.ini
+_codeql_detected_source_root

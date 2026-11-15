@@ -1,0 +1,4 @@
+// ObsSynth4D application icon resource
+#include <windows.h>
+
+101 ICON "..\\..\\..\\res\\obssynth.ico"
